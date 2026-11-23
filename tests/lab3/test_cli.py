@@ -313,6 +313,22 @@ def test_bad_bundle_prints_once_and_cleans_up(harness: Harness) -> None:
     assert "6. Cleanup" in harness.stream.getvalue()
 
 
+def test_zero_amount_reads_as_no_direct_loss(harness: Harness) -> None:
+    """Show a finding without a loss of its own as such, not as 0.00 EUR."""
+    data = report_data()
+    data["findings"].append(
+        {**data["findings"][0], "title": "Conflicting roles", "amount_at_risk_eur": 0}
+    )
+    script = investigation_script()
+    script[-1] = response("report-1", message(json.dumps(data)))
+    harness.model = ModelFake(script)
+    path = harness.app().run(harness.bundle)
+    text = " ".join(plain(harness.stream.getvalue()).split())
+    assert "F2 [high] Conflicting roles · no direct loss" in text
+    assert "0.00 EUR" not in text
+    assert "no direct loss" in path.read_text(encoding="utf-8")
+
+
 def test_missing_reference_hash_stops_before_the_sandbox(harness: Harness) -> None:
     """Refuse a bundle without its reference hash, before allocating anything."""
     harness.bundle.with_suffix(".sha256").unlink()
@@ -547,8 +563,9 @@ def test_main_options_and_forced_final_answer(harness: Harness) -> None:
         == 0
     )
     assert (harness.output / "sample-report.md").is_file()
+    digest = hashlib.sha256(harness.bundle.read_bytes()).hexdigest()
     assert harness.model.requests[0]["input"] == [
-        {"role": "user", "content": "Custom task"}
+        {"role": "user", "content": cli.task_with_integrity("Custom task", digest)}
     ]
     assert harness.model.requests[1]["tool_choice"] == "none"
     assert "snapshot" in harness.client.calls and "stop" not in harness.client.calls
@@ -562,9 +579,10 @@ def test_main_defaults_and_attachment(harness: Harness) -> None:
         )
         == 0
     )
-    assert harness.model.requests[0]["input"] == [
-        {"role": "user", "content": DEFAULT_TASK}
-    ]
+    digest = hashlib.sha256(harness.bundle.read_bytes()).hexdigest()
+    content = harness.model.requests[0]["input"][0]["content"]
+    assert content == cli.task_with_integrity(DEFAULT_TASK, digest)
+    assert content.startswith(DEFAULT_TASK) and digest in content
     assert "create" not in harness.client.calls and "stop" not in harness.client.calls
     arguments = cli._parser().parse_args([str(harness.bundle)])
     assert arguments.output_dir == Path("out") and arguments.max_steps == 15

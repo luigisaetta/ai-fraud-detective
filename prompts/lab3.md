@@ -80,9 +80,13 @@ so the report is a list of findings, not one root cause.
   - `timeline` (array of `{time, event, evidence}`), `next_steps` (array of
     strings).
 - `REPORT_REQUEST`: the request to the model: write the forensic report from
-  the investigation, one finding per distinct problem, citing only evidence
-  found with the tools (line 1 of a CSV file is the header), listing cleared
-  anomalies, with a total exposure that does not count the same money twice.
+  the investigation, one finding per distinct loss or exposure. The control
+  failures that made a loss possible (self-approval, split invoices,
+  conflicting roles...) go inside that finding, with their evidence, not in
+  separate findings; a control failure is a finding of its own only when it
+  caused no loss, with an amount of 0. Cite only evidence found with the
+  tools (line 1 of a CSV file is the header), list cleared anomalies, and
+  give a total exposure that does not count the same money twice.
 - `REVIEW_NOTE`: a fixed sentence that says the findings come from an AI agent
   and must be verified by the investigators before drawing conclusions. The
   code adds it to every report: it is not asked to the model.
@@ -112,6 +116,10 @@ so the report is a list of findings, not one root cause.
   `ap/invoices.csv:2, 9`, `ap/invoices.csv:2,29-34`.
   The first number after the last `:` is the line to check.
 - `money(amount) -> str`: for example `106,991.00 EUR`.
+- `amount_at_risk(amount) -> str`: `money(amount)`, or `no direct loss` when
+  the amount is 0: printed as `0.00 EUR`, a control failure without a loss of
+  its own would read as "no risk". Use it wherever the amount of a finding is
+  shown (Markdown and result panel).
 - `render_markdown(report, metadata: dict[str, str]) -> str`: a readable
   report: title `Forensic Review Report`, the review note, a metadata table
   (bundle, bundle SHA-256, date, model, sandbox, steps, tool calls, tokens),
@@ -146,7 +154,14 @@ python -m triage.cli BUNDLE [--sandbox-id ID] [--keep] [--snapshot]
   3. **Bundle**: upload it with `expected_sha256`, so the copy in the sandbox
      is checked before the extraction; print that the copy matches, and
      `summary.describe()`.
-  4. **Investigation**: run the agent; print each `on_event` line.
+  4. **Investigation**: run the agent; print each `on_event` line. The
+     agent cannot check the hash itself (the reference is outside the
+     bundle), so tell it the result: its task is `task_with_integrity(task,
+     sha256)`, the task followed by a blank line and `INTEGRITY_NOTE`, a
+     fixed sentence with the verified hash saying that the bundle matched the
+     reference locally and in the sandbox, so the archive hash needs no
+     further check. It is a fact established by the code, not bundle
+     content.
   5. **Report**: `ReportWriter`, then `EvidenceChecker`; write
      `<output-dir>/<bundle-stem>-report.md` and `-report.json`; print both
      paths and how many evidence lines were verified. The JSON file is the
@@ -253,7 +268,8 @@ Rules:
   with the report's **summary** under `Summary:`, wrapped with `textwrap` to
   fit inside the box (never cut: the whole text is shown); a line
   `Overall risk: <value> · Total exposure: <money>`; `Findings (<n>):` and
-  one wrapped line per finding, `F<n> [<severity>] <title> · <money>`; then
+  one wrapped line per finding, `F<n> [<severity>] <title> · <amount>`
+  (`amount_at_risk`); then
   `Evidence verified: <n>/<total>` and `Bundle SHA-256: <first 16 hex>…`.
   The report paths are printed in step 5, outside the box, so long paths are
   never cut.
@@ -298,12 +314,13 @@ They cover:
   line exists; a missing file, a line past the end and a malformed location
   are not, and nothing raises.
 - `render_markdown`: all sections, the review note, the amounts in EUR and
-  the ✔ / ✘ marks are present.
+  the ✔ / ✘ marks are present; an amount of 0 reads `no direct loss`.
 - Integrity: a missing `.sha256` file or a changed bundle stops the run
   before any sandbox is created, with one error line; `--expected-sha256`
   replaces the file.
 - `TriageApp.run` end to end with the fakes: the six steps in order; the
-  report files are written, with the bundle hash;
+  first request carries `task_with_integrity(task, sha256)`; the report
+  files are written, with the bundle hash;
   a created sandbox is closed; with `keep=True` it is not, and its id is
   printed; an attached sandbox is never closed; a bad bundle prints one
   error line and still runs the cleanup; a `close()` that raises

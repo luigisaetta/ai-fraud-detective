@@ -330,6 +330,15 @@ def test_markdown_sections_and_verification_marks() -> None:
     assert "first cited line exists" in text
 
 
+def test_zero_amount_renders_as_no_direct_loss() -> None:
+    """Never print a finding without a loss of its own as 0.00 EUR."""
+    data = report_data()
+    data["findings"][0]["amount_at_risk_eur"] = 0
+    text = render_markdown(FraudReport.from_dict(data), {})
+    assert "**Amount at risk:** no direct loss" in text
+    assert "0.00 EUR" not in text.split("## Findings")[1]
+
+
 def test_writer_from_settings() -> None:
     """Use the provided client factory with the configured model identifier."""
     configured = settings()

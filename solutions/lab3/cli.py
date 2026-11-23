@@ -33,6 +33,7 @@ from triage.report import (
     FraudReport,
     ReportError,
     ReportWriter,
+    amount_at_risk,
     money,
     render_markdown,
 )
@@ -45,6 +46,11 @@ DEFAULT_TASK = (
     "evidence."
 )
 DEFAULT_OUTPUT_DIR = Path("out")
+INTEGRITY_NOTE = (
+    "Integrity: before this investigation the code checked the bundle against the "
+    "reference SHA-256 recorded in the case file ({sha256}). It matched locally and, "
+    "after the upload, in the sandbox. You do not need to check the archive hash."
+)
 PROGRESS_INTERVAL_SECONDS = 30.0
 BOX_WIDTH = 64
 INDENT = "  "
@@ -209,7 +215,7 @@ class ConsoleView:
         for number, finding in enumerate(report.findings, 1):
             text = (
                 f"F{number} [{finding.severity}] {finding.title} · "
-                f"{money(finding.amount_at_risk_eur)}"
+                f"{amount_at_risk(finding.amount_at_risk_eur)}"
             )
             lines = textwrap.wrap(text, width, subsequent_indent="   ")
             rows += [self._row(INDENT + line) for line in lines]
@@ -406,7 +412,7 @@ class TriageApp:
             max_steps=options.max_steps,
             on_event=view.event,
         )
-        result = agent.run(options.task)
+        result = agent.run(task_with_integrity(options.task, options.expected_sha256))
         view.done(
             f"{result.stopped_reason}: {result.steps} steps, "
             f"{len(result.tool_calls)} tool calls"
@@ -494,6 +500,22 @@ class TriageApp:
             )
         else:
             self._view.done("Sandbox closed")
+
+
+def task_with_integrity(task: str, sha256: str | None) -> str:
+    """The task for the agent, followed by the integrity check already done.
+
+    The reference hash is outside the bundle, so the agent cannot check it: it is
+    told the result, a fact established by the code, not by bundle content.
+
+    Args:
+        task: The investigation request.
+        sha256: The verified hash of the bundle.
+
+    Returns:
+        The text of the first user message.
+    """
+    return f"{task}\n\n{INTEGRITY_NOTE.format(sha256=sha256)}"
 
 
 def _positive_int(value: str) -> int:
