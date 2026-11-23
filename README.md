@@ -1,31 +1,33 @@
-# Support Bundle Triage Agent
+# AI Fraud Detective
 
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://black.readthedocs.io/)
 [![Lint: pylint](https://img.shields.io/badge/lint-pylint-blue.svg)](https://pylint.readthedocs.io/)
 [![Tests: pytest](https://img.shields.io/badge/tests-pytest-blue.svg)](https://docs.pytest.org/)
 [![Python 3.12+](https://img.shields.io/badge/python-3.12%2B-blue.svg)](https://www.python.org/downloads/)
 
-![Workshop overview: build an AI triage agent with Codex, analyze support bundles in isolated OCI Sandboxes, and produce an evidence-based report.](images/support-bundle-triage-workshop.png)
+<!-- TODO: new workshop illustration (the support-triage image no longer fits). -->
 
-Diagnosing a support incident often means piecing together application logs,
-database alerts, configuration files and metrics.
+Most payment fraud is not hidden in a single document. It shows up in the
+connections across systems: a supplier's bank account that was changed
+without verification, invoices that stay just under an approval threshold,
+and a clerk who can both enter and approve them.
 
-In this workshop, you will use **Codex** to build an AI agent that investigates
-a **support bundle**, an archive containing these diagnostic files. The agent
-produces a triage report with a root cause, cited evidence, a timeline,
-confidence and next steps.
+In this workshop, you will use **Codex** to build an AI agent that
+investigates an **accounts payable data bundle**, an archive of ERP exports,
+emails and control policies. The agent produces a forensic report with
+findings, the amount at risk, cited evidence, a timeline and next steps.
 
-You will learn how to give a model tools to explore files, run Python analysis
-and correlate evidence across multiple sources.
+You will learn how to give a model tools to explore files, run Python
+analysis and correlate evidence across tables, logs and emails.
 
 You will also learn how to manage an investigation across multiple steps with
 the **OpenAI** Responses API and turn its findings into a structured report
 with verifiable citations.
 
-Customer diagnostic files are untrusted input, and the agent can generate code
-to analyze them. To protect your machine and contain that execution, all
-analysis runs inside an isolated **OCI Sandbox with outbound network access
-disabled**.
+The model writes and runs analysis code that nobody has reviewed, on
+financial and personal data. To contain that execution and keep the data
+inside, all analysis runs in an isolated **OCI Sandbox with outbound network
+access disabled**.
 
 The model runs through OCI Generative AI or **OpenAI**. OCI provides the
 sandbox in either case.
@@ -41,6 +43,44 @@ will learn in each lab.
 | 1 | [Sandbox tools](labs/lab1.md) | `triage/tools.py` |
 | 2 | [Agent loop](labs/lab2.md) | `triage/agent.py` |
 | 3 | [Report and end-to-end run](labs/lab3.md) | `triage/report.py`, `triage/cli.py` |
+
+## The case
+
+Halden Manufacturing, a fictitious industrial company, receives an anonymous
+report: *someone in accounts payable may be diverting supplier payments*. The
+report names no person and no supplier. Because the suspicion is internal,
+management engages an external forensic firm instead of asking the finance
+department to investigate itself.
+
+You play the analysts of the forensic firm:
+
+1. The firm defined the extraction procedure and script. The internal IT
+   team, which does not report to finance, approved them and ran the
+   extraction without notice, with a read-only database user.
+2. The script produced the bundle with a manifest of file hashes, and
+   recorded the SHA-256 of the whole archive outside it, in the case file.
+3. Your agent verifies that hash before the investigation, then explores
+   nine months of payables data: suppliers, bank accounts, change logs,
+   invoices, payments, employees, user roles and emails.
+4. Its report cites the exact rows that support each finding and states the
+   hash of the bundle it analysed. The investigators verify it before
+   drawing conclusions.
+
+All data in the sample case is invented: company, people, suppliers and
+bank accounts.
+
+### Why a sandbox, if the data is intact?
+
+- **The code is untrusted.** The model writes and runs Python that nobody
+  reviewed. A bug or a wrong command must not run where there is access to
+  the ERP, to credentials or to other data, even when the bundle is clean.
+- **The data is sensitive.** Supplier and payroll bank details, employee
+  records: with outbound traffic denied, not even a model error can send
+  them anywhere.
+- **Integrity is not trust.** The hash proves that nobody changed the data
+  after the extraction, not who wrote it. Invoice descriptions and emails
+  come from suppliers, and the rows under investigation were entered by the
+  suspect. Some of that text tries to manipulate the AI.
 
 ## Before you start
 
@@ -72,13 +112,13 @@ OCI configuration and preflight checks, then brings you back to the labs.
 Clone the repository:
 
 ```bash
-git clone https://github.com/<your-github-owner>/support-bundle-triage-agent.git
+git clone https://github.com/<your-github-owner>/ai-fraud-detective.git
 ```
 
 Enter the cloned directory. Run all subsequent commands from here:
 
 ```bash
-cd support-bundle-triage-agent
+cd ai-fraud-detective
 ```
 
 ### 2. Create and activate the Python environment
@@ -86,14 +126,14 @@ cd support-bundle-triage-agent
 Create a dedicated environment with Python 3.12:
 
 ```bash
-conda create -n support-bundle-triage-agent python=3.12 -y
+conda create -n ai-fraud-detective python=3.12 -y
 ```
 
 Activate it so the following commands use that environment's Python. Repeat
 this activation whenever you open a new terminal for the workshop:
 
 ```bash
-conda activate support-bundle-triage-agent
+conda activate ai-fraud-detective
 ```
 
 ### 3. Install the dependencies
@@ -117,7 +157,7 @@ command. The backslashes continue it across lines:
 ```bash
 oci generative-ai generative-ai-project create \
   --compartment-id YOUR_COMPARTMENT_OCID \
-  --display-name support-triage \
+  --display-name fraud-detective \
   --conversation-config file://config/project-conversation.json \
   --short-term-memory-optimization-config file://config/project-short-term-memory.json \
   --sandbox-config file://config/sandbox-project-deny-all.json
@@ -217,29 +257,32 @@ python -m pylint triage
 
 ## Run your finished agent
 
-After completing Lab 3, generate the sample support bundle:
+After completing Lab 3, generate the sample case:
 
 ```bash
 python -m triage.make_bundle
 ```
 
-This creates `bundles/sample-ora00020.zip`. Investigate it with the agent:
+This creates the bundle `bundles/halden-ap-q3-2026.zip` and, next to it, the
+reference hash recorded in the case file, `bundles/halden-ap-q3-2026.sha256`.
+Investigate the bundle with the agent:
 
 ```bash
-python -m triage.cli bundles/sample-ora00020.zip --keep
+python -m triage.cli bundles/halden-ap-q3-2026.zip --keep
 ```
 
-The CLI prints each stage and writes the findings to
-`out/sample-ora00020-report.md` and `out/sample-ora00020-report.json`.
-Review the root cause, confidence and evidence verification marks as described
-in the [Lab 3 guide](labs/lab3.md).
+The CLI verifies the bundle against the reference hash, prints each stage
+and writes the findings to `out/halden-ap-q3-2026-report.md` and
+`out/halden-ap-q3-2026-report.json`. Review the findings, the total exposure
+and the evidence verification marks as described in the
+[Lab 3 guide](labs/lab3.md).
 
 With `--keep`, the sandbox remains available and the CLI prints its ID and a
 command to reuse it. To run another investigation without waiting for a new
 sandbox, replace `YOUR_SANDBOX_ID` below with that ID:
 
 ```bash
-python -m triage.cli bundles/sample-ora00020.zip --sandbox-id YOUR_SANDBOX_ID
+python -m triage.cli bundles/halden-ap-q3-2026.zip --sandbox-id YOUR_SANDBOX_ID
 ```
 
 The CLI preserves an attached sandbox. Follow the Lab 3 cleanup instructions
@@ -247,6 +290,9 @@ when you finish using it. Omit `--keep` on the first run if you want the CLI
 to close the sandbox it creates.
 
 For a map of the project files, see [Repository layout](layout.md).
+Instructors find the story, the data and the answer key in the
+[scenario design](docs/scenario-design.md); participants should read it only
+after their first run, because it reveals the findings.
 
 ## How AI is used
 
