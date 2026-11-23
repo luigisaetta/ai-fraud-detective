@@ -112,7 +112,7 @@ OCI configuration and preflight checks, then brings you back to the labs.
 Clone the repository:
 
 ```bash
-git clone https://github.com/<your-github-owner>/ai-fraud-detective.git
+git clone https://github.com/luigisaetta/ai-fraud-detective.git
 ```
 
 Enter the cloned directory. Run all subsequent commands from here:

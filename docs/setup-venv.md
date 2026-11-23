@@ -29,7 +29,7 @@ settings in more detail.
 Clone the repository. Skip this command if you already have a checkout:
 
 ```bash
-git clone https://github.com/<your-github-owner>/ai-fraud-detective.git
+git clone https://github.com/luigisaetta/ai-fraud-detective.git
 ```
 
 Enter the repository directory, or open your existing checkout. Run all
