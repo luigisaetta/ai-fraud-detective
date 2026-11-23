@@ -8,30 +8,91 @@ bank accounts are invented.
 
 ## 1. The pitch
 
-An internal audit team runs a review of accounts payable (AP) for the third
-quarter. The data is already in the ERP: invoices were received, entered,
-approved and paid. The auditors export the relevant tables and give them to
-an AI agent: *"Review Q3 accounts payable. Find payments that may be
+An anonymous report to the whistleblowing channel of Halden Manufacturing
+says that *someone in accounts payable may be diverting supplier
+payments*. It names no person and no supplier. Because the suspicion is
+internal, management does not ask the finance department to investigate
+itself: it engages an external forensic firm.
+
+The firm defines the procedure and the extraction script. The internal IT
+team, which does not report to finance, reviews and approves them, then
+runs the extraction without notice, with a read-only database user, and
+records the SHA-256 hash of the bundle. The firm's analysts give the bundle
+to an AI agent: *"Review accounts payable for Q3. Find payments that may be
 fraudulent or wrong, explain why, quantify the exposure and cite the
 evidence."*
 
-The agent works like an auditor: it reads the control policy, explores the
+The code first checks the bundle against the recorded hash. Then the agent
+works like a forensic accountant: it reads the control policy, explores the
 exports, writes Python to join tables and look for patterns, follows the
-leads and writes a report where every finding cites the rows that prove it.
-All of this runs in an OCI Sandbox: the data is untrusted (it contains
-supplier-written text, including an attempt to manipulate the AI), and so is
-the code the model writes.
+leads and writes a report where every finding cites the rows that prove
+it. The report supports the investigators: they verify it before drawing
+conclusions.
+
+The workshop participants play the analysts of the forensic firm.
+
+### Why a sandbox
+
+The bundle is intact, but that does not make it safe to process on a
+laptop:
+
+1. **The code is untrusted.** The model writes and runs Python that nobody
+   reviewed. A bug, a wrong delete or an endless loop must not run where
+   there is access to the ERP, to credentials or to other data. This holds
+   even for a perfectly clean bundle.
+2. **The data is sensitive.** Supplier IBANs, payroll IBANs and employee
+   records are financial and personal data. The sandbox network policy is
+   DENY_ALL: not even a model error or a successful injection can send them
+   anywhere. For a forensic firm handling a client's data, this is a
+   requirement, and the analysis can run in the client's own OCI tenancy.
+3. **Integrity is not trust.** The hash proves that nobody changed the data
+   after the extraction. It says nothing about who wrote it. Invoice
+   descriptions, supplier names and emails come from suppliers, and the
+   rows under investigation were entered by the suspect: they are extracted
+   faithfully and are still fraudulent. Some of this text tries to
+   manipulate the AI (section 6).
 
 ## 2. The company and the case
 
 - **Company:** Halden Manufacturing S.p.A., a mid-size industrial company,
   about 250 employees, currency EUR.
+- **Forensic firm:** Veltmark Forensic Partners (fictitious), engaged on
+  2026-09-22.
 - **Period:** the review covers Q3 2026 (2026-07-01 to 2026-09-30). For
   context, the AP export starts on 2026-01-01, so the agent can compare Q3
-  with the history of each supplier. The export was taken on 2026-09-30:
-  the bundle shows the state of the ERP on that day.
-- **Audit request:** a routine quarterly AP review (`case/audit_request.txt`).
-  It mentions no suspect: the agent must find the case by itself.
+  with the history of each supplier. IT ran the extraction on the evening of
+  2026-09-30: the bundle shows the state of the ERP at that moment.
+- **Engagement letter** (`case/engagement_letter.txt`): scope, period, what
+  to deliver, and the anonymous report, quoted as received. It names no
+  person and no supplier: the agent must find the case by itself.
+- **Urgency:** one fraudulent payment is still scheduled (section 3), so a
+  fast and precise report has a concrete value: the money can still be
+  stopped.
+
+### Chain of custody
+
+1. Veltmark writes the extraction procedure and script
+   (`case/extraction_procedure.md`); the IT manager approves it.
+2. IT runs the script with a read-only user. Besides the ERP tables, it
+   exports the messages of the AP shared mailbox about bank details and the
+   quarter close (`mail/`). It writes a `manifest.json`
+   with the SHA-256 of every file and logs the run
+   (`case/extraction_log.txt`: time, user, tables, row counts).
+3. The script records the SHA-256 of the whole zip **outside the bundle**,
+   in the case file. In the lab this is `bundles/halden-ap-q3-2026.sha256`;
+   in production it would be an Object Storage bucket with a retention rule,
+   or the case management system. A hash stored only inside the zip proves
+   nothing: whoever changes the zip can recompute it.
+4. The CLI checks the hash twice: locally before the upload, and inside the
+   sandbox after the upload. If either check fails, the investigation does
+   not start.
+5. The report states the hash of the bundle it analysed, so each conclusion
+   is tied to an exact version of the data.
+
+This makes the procedure defensible and repeatable. It does not by itself
+give the report legal value: admissibility depends on the jurisdiction and
+on how the evidence is handled, and the conclusions must be reviewed and
+signed by a qualified person. The workshop says so explicitly.
 
 ## 3. The fraud (primary finding)
 
@@ -99,7 +160,10 @@ workshop.
 
 | File | Rows (about) | Columns / content |
 |------|--------------|-------------------|
-| `case/audit_request.txt` | — | the request from internal audit: scope, period, what to deliver |
+| `manifest.json` | — | written by the extraction script: SHA-256 and size of every file, extraction time, script version |
+| `case/engagement_letter.txt` | — | the engagement of the forensic firm: scope, period, deliverables, and the anonymous report as received |
+| `case/extraction_procedure.md` | — | the procedure written by the forensic firm, with the approval of the IT manager |
+| `case/extraction_log.txt` | — | the log of the extraction run: time, read-only user, tables, row counts |
 | `policy/ap_controls.md` | — | the controls: approval thresholds, segregation of duties, bank changes need call-back verification, no self-approval |
 | `ap/suppliers.csv` | 180 | supplier_id, supplier_name, site_code, tax_id, country, status, creation_date, created_by, payment_terms, bank_account_id |
 | `ap/supplier_bank_accounts.csv` | 200 | bank_account_id, supplier_id, iban, bank_name, start_date, end_date |
@@ -109,6 +173,10 @@ workshop.
 | `hr/employees.csv` | 250 | employee_id, full_name, user_name, department, job_title, hire_date, payroll_iban |
 | `security/user_roles.csv` | 120 | user_name, role, granted_date, granted_by, ticket, note |
 | `mail/*.txt` | 6–8 | emails as plain text with From, To, Date and Subject headers |
+
+The reference hash of the whole zip is a separate file,
+`bundles/halden-ap-q3-2026.sha256`, outside the bundle (section 2, chain of
+custody).
 
 Column names follow the vocabulary of an ERP payables module (supplier,
 site, invoice, payment batch) without copying a real product schema.
@@ -192,6 +260,7 @@ explicitly is a bonus.
 - recall the payments through the bank;
 - remove the conflicting roles;
 - recover the Kestrel duplicate;
+- preserve the evidence: keep the bundle, its hash and the report;
 - involve HR and legal according to company policy.
 
 ## 10. Changes to the report (input for phase 2)
@@ -211,9 +280,19 @@ findings, each with its own evidence and amount. Proposed schema:
 - `timeline`: array of `{time, event, evidence}`; `next_steps`: array of
   strings.
 
+Added by the code, not by the model:
+- `bundle_sha256`: the hash checked before the investigation;
+- a fixed note: *"Findings produced by an AI agent to support the
+  investigators. Verify them before drawing conclusions."*
+
 The evidence checker stays the same: it verifies every `location` of every
-finding. The CLI result panel shows the summary, the total exposure and one
-line per finding.
+finding. The CLI result panel shows the summary, the total exposure, one
+line per finding and the bundle hash.
+
+The CLI gets a new step, "Verify bundle integrity", before the upload: it
+compares the zip with the reference hash, then runs `sha256sum` in the
+sandbox on the uploaded copy. A unit test checks that an altered bundle
+stops the investigation.
 
 ## 11. Acceptance criteria for phase 3 (real model)
 
@@ -232,7 +311,8 @@ fewer background suppliers or clearer descriptions. If it finds F1 with
 
 ## 12. Open questions
 
-For a reviewer from finance or internal audit (one hour):
+For a reviewer from finance, internal audit or forensic accounting (one
+hour):
 1. Are the columns and the change log believable for an ERP export?
 2. Is a 10,000 EUR single-approval threshold realistic for a company of this
    size?
@@ -240,6 +320,12 @@ For a reviewer from finance or internal audit (one hour):
    approvals come from a careless supervisor instead?
 4. Are about 1,000 invoices a quarter for 180 suppliers proportionate?
 5. Is anything in the story too obvious, or unrealistic, for an auditor?
+6. Is the engagement and extraction procedure (section 2) how a forensic
+   firm would work? Should the firm, rather than IT, run the script, or
+   witness the run?
+
+For a reviewer from legal (optional): is the wording on legal value in
+section 2 correct and prudent enough?
 
 For the author:
 1. Company name, country and currency: is a fictitious Italian company in
