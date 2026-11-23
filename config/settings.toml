@@ -1,0 +1,48 @@
+# Support Bundle Triage Agent: configuration.
+#
+# This file is versioned and holds no secrets. The API keys go in .env
+# (see .env.example), which is never committed.
+
+[model]
+# Where the model is served: "oci" (OCI Generative AI) or "openai".
+provider = "oci"
+# An OpenAI GPT model: the OCI model id (for example "openai.gpt-...") or the
+# OpenAI model name, depending on the provider.
+model_id = "openai.gpt-6.1-sol"
+# model_id = "xai.grok-4.7"
+# model_id = "google.gemini-2.5-flash"
+
+[oci]
+# Region of the Generative AI project and its sandboxes.
+region = "eu-frankfurt-1"
+# region = "us-chicago-1"
+
+# OCID of the Generative AI project with sandboxes enabled and outbound
+# network DENY_ALL (created in Lab 0 with config/sandbox-project-deny-all.json).
+# Set your project OCID after completing labs/lab0.md (Lab 0).
+project_id = "ocid1.generativeaiproject.oc1..<your-project-ocid>"
+# Chicago
+# project_id = "ocid1.generativeaiproject.oc1..<your-project-ocid>"
+# OCI SDK configuration file and profile.
+config_file = "~/.oci/config"
+profile = "DEFAULT"
+# How the OCI SDK signs requests: "api_key" or "security_token"
+# (the latter after "oci session authenticate").
+auth = "api_key"
+
+[sandbox]
+# Runtime of new sandboxes: "python-3.11" or an OCIR image URI.
+runtime = "python-3.11"
+# Compute shape: "SMALL" (1 OCPU, 4 GB), "MEDIUM" (2, 8) or "LARGE" (4, 16).
+shape = "SMALL"
+# Lifetime of a new sandbox, in minutes (at most 2880, that is 48 hours).
+lifetime_minutes = 60
+# Longest command the application runs, in seconds.
+max_command_seconds = 600
+# Longest wait for a new sandbox to reach RUNNING, in seconds. A cold start
+# can take several minutes; a warm pool in the project makes it faster.
+ready_timeout_seconds = 1800
+# Warm pool of the project to take new sandboxes from (its shape must match
+# "shape" above); empty to start sandboxes cold. Pools are created with the
+# project, in the OCI Console.
+warm_pool = ""
