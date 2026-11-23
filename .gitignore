@@ -5,6 +5,7 @@ __pycache__/
 .venv/
 out/
 bundles/*.zip
+bundles/*.sha256
 !bundles/.gitkeep
 .vscode/
 

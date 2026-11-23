@@ -22,7 +22,8 @@ triage/
   llm.py                           configured model client (provided)
   sandbox.py                       sandbox lifecycle, commands and files (provided)
   ingest.py                        safe bundle upload and extraction (provided)
-  make_bundle.py                   sample bundle generator (provided)
+  make_bundle.py                   writes the sample case bundle and its hash (provided)
+  sample_case/                     generator of the sample case data (provided)
   cleanup.py                       leftover sandbox removal (provided)
   preflight/                       environment and OCI checks (provided)
   tools.py                         sandbox function tools (Lab 1)
@@ -33,9 +34,10 @@ labs/                              participant guides: lab0.md through lab3.md
 prompts/                           the Codex prompt for each lab
 tests/unit/                        infrastructure tests and fake sandbox client
 tests/labN/                        acceptance tests for lab N
+tests/scenario/                    sample case tests and reference solver
 solutions/labN/                    reference solutions for participants
-docs/                              lab overview and sample bundle findings
-bundles/                           generated support bundles
+docs/                              scenario design, sample case findings, lab overview
+bundles/                           generated bundles and their .sha256 files
 out/                               generated Markdown and JSON reports
 ```
 

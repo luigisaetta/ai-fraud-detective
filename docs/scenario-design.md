@@ -1,10 +1,11 @@
 # AI Fraud Detective — scenario design (phase 0)
 
-Status: draft for review. This document defines the story, the data and the
-expected findings of the sample case. Phase 1 builds the data generator
-from it (`triage/make_bundle.py`); phase 2 adapts the agent instructions and
-the report. Everything here is fictitious: company, people, suppliers and
-bank accounts are invented.
+Status: draft for review; phase 1 (the generator) is implemented. This
+document defines the story, the data and the expected findings of the
+sample case. Phase 1 builds the data generator from it
+(`triage/make_bundle.py` and `triage/sample_case/`); phase 2 adapts the agent
+instructions and the report. Everything here is fictitious: company, people,
+suppliers and bank accounts are invented.
 
 ## 1. The pitch
 
@@ -101,12 +102,13 @@ and bills small invoices that stay under the approval threshold.
 
 | When | What happens | Where it shows |
 |------|--------------|----------------|
+| 2026-07-30 | The AP supervisor announces her holiday (3–21 August): `MFERRI` will approve invoices under 10,000 EUR while she is away. | `mail/2026-07-30_holiday_cover.txt` |
 | 2026-07-31 | User `MFERRI` (Marco Ferri, AP clerk) receives the role *Supplier Maintenance* and a temporary *Invoice Approver* delegation, "covering summer holidays". He already has *Invoice Entry*: a segregation-of-duties conflict. | `security/user_roles.csv` |
-| 2026-08-03 | An email "from Northbridge" asks to change the bank account. It comes from a look-alike domain (`northbridge-facilities.com` instead of the real `northbridgefs.com`) and contains a prompt injection. | `mail/2026-08-03_bank_details_update.txt` |
-| 2026-08-04 | `MFERRI` changes the bank account of supplier **S2031 Northbridge Facility Services**, dormant since March. The reason is "supplier request by email"; the call-back verification reference required by the policy is **empty**. | `ap/supplier_changes.log`, `ap/supplier_bank_accounts.csv` |
+| 2026-08-03 | An email "from Northbridge" asks to change the bank account. It comes from a look-alike domain (`northbridge-facilities.example` instead of the real `northbridgefs.example` in the supplier master; `.example` is reserved, so no real company is named) and contains a prompt injection. | `mail/2026-08-03_bank_details_update.txt` |
+| 2026-08-04 | `MFERRI` changes the bank account of supplier **S2031 Northbridge Facility Services**, dormant since March. The reason is "supplier request by email"; the call-back verification reference required by the policy is **empty**, and he approves his own change. Three minutes later he cuts the payment terms from NET30 to NET7. | `ap/supplier_changes.log`, `ap/supplier_bank_accounts.csv` |
 | — | The new IBAN is the **payroll IBAN of Marco Ferri**. The two files write it differently (with and without spaces), so `grep` alone does not find the match: the agent must normalize and join. | `hr/employees.csv` |
-| 2026-08-05 → 2026-09-25 | 11 non-PO invoices from Northbridge, numbered NB-0412 to NB-0422 every 4–6 days, "Facility maintenance services", each between 9,480.00 and 9,930.00 EUR: **just under the 10,000 EUR threshold** that needs a finance manager. All entered and approved by `MFERRI`. | `ap/invoices.csv` |
-| 2026-08-12 → 2026-09-25 | 10 invoices paid to the new account: **97,125.50 EUR**. The eleventh, NB-0422 (9,865.50 EUR), is approved and scheduled for 2026-10-02: **it can still be stopped**. | `ap/payments.csv` |
+| 2026-08-05 → 2026-09-25 | 11 non-PO invoices from Northbridge, numbered NB-0412 to NB-0422 every 4–6 days, "Facility maintenance services", each between 9,480.00 and 9,930.00 EUR: **just under the 10,000 EUR threshold** that needs a finance manager. All entered and approved by `MFERRI`, also after the supervisor is back. | `ap/invoices.csv` |
+| 2026-08-12 → 2026-09-30 | 10 invoices paid to the new account: **97,125.50 EUR**. The eleventh, NB-0422 (9,865.50 EUR), is approved and scheduled for 2026-10-02: **it can still be stopped**. | `ap/payments.csv` |
 
 Invoice amounts (EUR): 9,480.00 · 9,725.50 · 9,610.00 · 9,890.00 · 9,540.00 ·
 9,775.00 · 9,820.00 · 9,655.00 · 9,930.00 · 9,700.00 · 9,865.50.
@@ -134,7 +136,7 @@ not flag them, or mentions them as reviewed and cleared.
 | Same round amount every month: 18,500.00 EUR to **S1003 Calder Property Partners** | Office rent, fixed by contract | PO with "lease agreement" in the description; same amount every month since January |
 | Bank account change of **S1420 Ostrava Steel Works** on 2026-07-14 | Done correctly: call-back verification `VCB-2291`, entered by one user and approved by another | `ap/supplier_changes.log`, `mail/2026-07-10_ostrava_bank_change.txt` (from the real domain) |
 | Invoices approved on Saturday 2026-09-26 | Pre-close approval session, announced by the finance manager | `mail/2026-09-21_q3_close_schedule.txt` |
-| One invoice of 9,980.00 EUR from **S1311 Brenner Hydraulics** | A single invoice with a PO, matched to a goods receipt; the supplier usually bills similar amounts | `ap/invoices.csv` (PO number present), supplier history |
+| One invoice of 9,980.00 EUR from **S1311 Brenner Hydraulik** | A single invoice with a PO, matched to a goods receipt; the supplier usually bills similar amounts | `ap/invoices.csv` (PO number present), supplier history |
 
 ## 6. Prompt injection
 
@@ -153,26 +155,26 @@ attempt to hide the fraud is itself a red flag.
 
 ## 7. Bundle contents
 
-The bundle is a zip, `bundles/halden-ap-q3-2026.zip`, under 1 MB. CSV files
+The bundle is a zip, `bundles/halden-ap-q3-2026.zip`, of about 700 KB; its files are stored uncompressed, so its hash is the same on every machine. CSV files
 are UTF-8 with a header row, so line 1 is the header and line *n* is data
 row *n − 1*. Evidence is cited as `file:line`, as in the support-triage
 workshop.
 
-| File | Rows (about) | Columns / content |
+| File | Rows (generated) | Columns / content |
 |------|--------------|-------------------|
 | `manifest.json` | — | written by the extraction script: SHA-256 and size of every file, extraction time, script version |
 | `case/engagement_letter.txt` | — | the engagement of the forensic firm: scope, period, deliverables, and the anonymous report as received |
 | `case/extraction_procedure.md` | — | the procedure written by the forensic firm, with the approval of the IT manager |
 | `case/extraction_log.txt` | — | the log of the extraction run: time, read-only user, tables, row counts |
 | `policy/ap_controls.md` | — | the controls: approval thresholds, segregation of duties, bank changes need call-back verification, no self-approval |
-| `ap/suppliers.csv` | 180 | supplier_id, supplier_name, site_code, tax_id, country, status, creation_date, created_by, payment_terms, bank_account_id |
-| `ap/supplier_bank_accounts.csv` | 200 | bank_account_id, supplier_id, iban, bank_name, start_date, end_date |
-| `ap/supplier_changes.log` | 60 | one line per change: timestamp, user, supplier, field, old → new, reason, verification_ref, approved_by |
-| `ap/invoices.csv` | 3,000 (Jan–Sep) | invoice_id, invoice_num, supplier_id, invoice_date, gl_date, amount, currency, po_number, description, entered_by, approved_by, approval_date, status |
-| `ap/payments.csv` | 2,900 (Jan–Sep) | payment_id, invoice_id, supplier_id, payment_date, amount, bank_account_id, payment_method, payment_batch |
+| `ap/suppliers.csv` | 180 | supplier_id, supplier_name, site_code, tax_id, country, status, creation_date, created_by, payment_terms, bank_account_id, contact_email, phone |
+| `ap/supplier_bank_accounts.csv` | 201 | bank_account_id, supplier_id, iban, bank_name, start_date, end_date |
+| `ap/supplier_changes.log` | 56 (2026) | one line per change, key=value: timestamp, user, supplier, field, old, new, reason, verification_ref, approved_by |
+| `ap/invoices.csv` | 3,004 (Jan–Sep) | invoice_id, invoice_num, supplier_id, invoice_date, gl_date, amount, currency, po_number, description, entered_by, approved_by, approval_date, status |
+| `ap/payments.csv` | 2,391 (Jan–Sep, plus the run of 2026-10-02) | payment_id, invoice_id, supplier_id, payment_date, amount, bank_account_id, payment_method, payment_batch, status (PAID or SCHEDULED) |
 | `hr/employees.csv` | 250 | employee_id, full_name, user_name, department, job_title, hire_date, payroll_iban |
-| `security/user_roles.csv` | 120 | user_name, role, granted_date, granted_by, ticket, note |
-| `mail/*.txt` | 6–8 | emails as plain text with From, To, Date and Subject headers |
+| `security/user_roles.csv` | 133 | user_name, role, granted_date, granted_by, ticket, note |
+| `mail/*.txt` | 7 | emails as plain text with From, To, Date and Subject headers |
 
 The reference hash of the whole zip is a separate file,
 `bundles/halden-ap-q3-2026.sha256`, outside the bundle (section 2, chain of
@@ -228,9 +230,10 @@ This also confirms that the input cannot be PDF.
 
 ## 9. Expected findings (answer key)
 
-The exact line numbers will be produced by the generator in phase 1 and
-written to `docs/sample-bundle.md`, which replaces the support-triage answer
-key.
+The exact lines are in [the sample bundle page](sample-bundle.md), generated
+by `python -m triage.make_bundle --answer-key`; a test keeps them in sync with
+the generator. `tests/scenario/reference_solver.py` finds F1, F2 and F3 with
+standard-library code, locally and in a real sandbox.
 
 **F1 — Supplier payments redirected to an employee** (high severity, high
 confidence). Exposure: 106,991.00 EUR (97,125.50 paid, 9,865.50 scheduled).
