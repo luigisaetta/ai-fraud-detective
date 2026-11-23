@@ -14,9 +14,9 @@ additional time for reading and review.
 | Lab | Topic | You build | Runs on | Hands-on time |
 |-----|-------|-----------|---------|------|
 | 0 | Setup and preflight | nothing (provided) | OCI | 5–7 min |
-| 1 | Sandbox tools | `triage/tools.py` | local fake | 5–7 min |
-| 2 | Agent loop | `triage/agent.py` | local fake + model | 5–7 min |
-| 3 | Report and end-to-end run | `triage/report.py`, `triage/cli.py` | OCI Sandbox + model | 5–7 min |
+| 1 | Sandbox tools | `fraud_detective/tools.py` | local fake | 5–7 min |
+| 2 | Agent loop | `fraud_detective/agent.py` | local fake + model | 5–7 min |
+| 3 | Report and end-to-end run | `fraud_detective/report.py`, `fraud_detective/cli.py` | OCI Sandbox + model | 5–7 min |
 
 Each lab has four parts:
 
@@ -28,8 +28,8 @@ Each lab has four parts:
 | Reference solution | `solutions/labN/` |
 
 Read the guide, give the prompt to Codex, review what it writes, run the
-tests. The code you build stays in `triage/`, and each lab builds on the
-previous ones. If you fall behind, copy `solutions/labN/` into `triage/` and
+tests. The code you build stays in `fraud_detective/`, and each lab builds on the
+previous ones. If you fall behind, copy `solutions/labN/` into `fraud_detective/` and
 move on.
 
 ---
@@ -45,10 +45,10 @@ move on.
    on with `MANAGED` network and `DENY_ALL`.
 3. Put your API key in `.env` (secrets only); set model, region and project
    OCID in `config/settings.toml`.
-4. Run `python -m triage.preflight --quick`: configuration, OCI credentials,
+4. Run `python -m fraud_detective.preflight --quick`: configuration, OCI credentials,
    project settings, permissions, and a model call that continues on the
    server.
-5. Run `python -m triage.preflight`: a test sandbox starts, runs commands,
+5. Run `python -m fraud_detective.preflight`: a test sandbox starts, runs commands,
    moves a file, cannot reach the internet, and is deleted. Creation and
    deletion together normally take less than 20 seconds. Creation may
    occasionally take several minutes: read Lab 1 meanwhile.
@@ -66,7 +66,7 @@ OpenAI, secrets vs configuration.
 
 **Goal:** give the model safe, small tools to explore a case bundle.
 
-**Build with Codex:** `triage/tools.py`, function tools on top of the provided
+**Build with Codex:** `fraud_detective/tools.py`, function tools on top of the provided
 `SandboxSession`:
 - `list_files` — bundle tree with sizes
 - `read_file` — a line range of a file
@@ -87,7 +87,7 @@ timeouts and output limits in the sandbox, model input as untrusted input.
 
 **Goal:** an agent that investigates the bundle by calling the tools.
 
-**Build with Codex:** `triage/agent.py`, a loop on the Responses API:
+**Build with Codex:** `fraud_detective/agent.py`, a loop on the Responses API:
 send the task and the tool schemas, execute the requested function calls in the
 sandbox, return the results, repeat until the model answers or the step budget
 runs out. The conversation is kept on the server: after the first call, only
@@ -108,20 +108,20 @@ investigate a small bundle with the real model.
 
 **Goal:** a forensic report from the sample case, on a real OCI Sandbox.
 
-**Before:** `python -m triage.make_bundle` writes
+**Before:** `python -m fraud_detective.make_bundle` writes
 `bundles/halden-ap-q3-2026.zip`, the extraction of nine months of accounts
 payable of a fictitious company, and `bundles/halden-ap-q3-2026.sha256`, its
 reference hash. The data hides a fraud, an honest error, legitimate
 anomalies and text that tries to give orders to the AI.
 
 **Build with Codex:**
-- `triage/report.py` — the report is one more turn of the same server-side
+- `fraud_detective/report.py` — the report is one more turn of the same server-side
   conversation, with structured output (strict JSON schema): findings, each
   with scheme, severity, confidence, amount at risk in EUR and evidence as
   `file:line`; cleared anomalies; timeline; next steps. Each cited line is
   read in the sandbox and marked ✔ or ✘. Rendered as Markdown, with a fixed
   note that investigators verify the findings.
-- `triage/cli.py` — `python -m triage.cli bundles/<bundle>.zip`: check the
+- `fraud_detective/cli.py` — `python -m fraud_detective.cli bundles/<bundle>.zip`: check the
   bundle against its reference hash, create a sandbox, upload the bundle and
   check the copy, run the agent, write the report to `out/`, clean up.
 

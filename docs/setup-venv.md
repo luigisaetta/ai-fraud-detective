@@ -168,7 +168,7 @@ configuration, OCI credentials, project, permissions and model tool calling.
 It calls the model but **does not create a sandbox**:
 
 ```bash
-python -m triage.preflight --quick
+python -m fraud_detective.preflight --quick
 ```
 
 If a check fails, follow the printed hint, fix the problem and rerun this
@@ -181,7 +181,7 @@ Run the full preflight to create a test sandbox, check its tools and file
 transfer, verify network isolation, and clean it up:
 
 ```bash
-python -m triage.preflight
+python -m fraud_detective.preflight
 ```
 
 Under normal conditions, sandbox creation and deletion together take less
@@ -189,7 +189,7 @@ than 20 seconds. Creation may occasionally take several minutes; the preflight
 shows progress while you wait. Continue when the checks pass.
 
 A warning that the sandbox is still stopping is acceptable. Delete it later
-with `python -m triage.cleanup --delete`.
+with `python -m fraud_detective.cleanup --delete`.
 
 ## 10. Continue with the labs
 

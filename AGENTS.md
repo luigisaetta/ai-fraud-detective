@@ -28,7 +28,7 @@ module. The other modules are provided and must be used as they are.
 AGENTS.md                this file (read-only)
 config/settings.toml     configuration, versioned, no secrets
 .env                     secrets only (API keys); never read it, print it or commit it
-triage/
+fraud_detective/
   config.py              Settings: config/settings.toml + .env       (provided)
   oci_clients.py         OCI SDK clients                              (provided)
   llm.py                 OpenAI client for the configured provider    (provided)
@@ -37,7 +37,7 @@ triage/
   make_bundle.py         writes the sample case bundle and its hash   (provided)
   sample_case/           generator of the sample case data            (provided)
   cleanup.py             removes leftover sandboxes                  (provided)
-  preflight/             environment check: python -m triage.preflight (provided)
+  preflight/             environment check: python -m fraud_detective.preflight (provided)
   tools.py               function tools over a SandboxSession         (Lab 1)
   agent.py               Responses API loop with function calling     (Lab 2)
   report.py              structured forensic report                   (Lab 3)
@@ -55,10 +55,10 @@ solutions/               reference solutions, for humans only: do not read (see 
 ### Files you must not change
 
 - `AGENTS.md`.
-- The provided modules: `triage/config.py`, `triage/oci_clients.py`,
-  `triage/llm.py`, `triage/sandbox.py`, `triage/ingest.py`,
-  `triage/make_bundle.py`, `triage/sample_case/`, `triage/cleanup.py`,
-  `triage/preflight/`, and any other file
+- The provided modules: `fraud_detective/config.py`, `fraud_detective/oci_clients.py`,
+  `fraud_detective/llm.py`, `fraud_detective/sandbox.py`, `fraud_detective/ingest.py`,
+  `fraud_detective/make_bundle.py`, `fraud_detective/sample_case/`, `fraud_detective/cleanup.py`,
+  `fraud_detective/preflight/`, and any other file
   marked "(provided)" above.
 - Existing tests, in `tests/unit/`, `tests/scenario/` and `tests/labN/`. Make them pass by fixing
   your code, never by editing, skipping or deleting a test.
@@ -76,9 +76,9 @@ participant, who may read it or copy it to catch up. It is not for you.
 - Do not open, read, search, import or copy anything in `solutions/`. Write the
   code of the lab from the lab's prompt, its guide and its tests.
 - The only exception: the user explicitly asks you to use a solution (for
-  example "copy solutions/lab1/tools.py into triage/").
-- The code of earlier labs that you build on is in `triage/` (for example
-  `triage/tools.py` from Lab 1), not in `solutions/`.
+  example "copy solutions/lab1/tools.py into fraud_detective/").
+- The code of earlier labs that you build on is in `fraud_detective/` (for example
+  `fraud_detective/tools.py` from Lab 1), not in `solutions/`.
 
 ### Scope
 
@@ -136,12 +136,12 @@ Run them from the repository root with the lab's Python environment active.
 ```bash
 pip install -r requirements.txt -r requirements-dev.txt   # once
 python -m pytest tests/unit tests/labN -q                 # tests of lab N
-python -m black --check triage tests
-python -m pylint triage
-python -m triage.preflight --quick                        # config and model, no sandbox
+python -m black --check fraud_detective tests
+python -m pylint fraud_detective
+python -m fraud_detective.preflight --quick                        # config and model, no sandbox
 ```
 
-Starting a real sandbox takes minutes. Do not run `python -m triage.preflight`
+Starting a real sandbox takes minutes. Do not run `python -m fraud_detective.preflight`
 without `--quick`, or any command that creates a sandbox, unless the user asks.
 
 ## Definition of done

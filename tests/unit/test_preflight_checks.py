@@ -13,9 +13,9 @@ Description: Unit tests of the project and model checks of the preflight:
 from pathlib import Path
 from types import SimpleNamespace
 
-from triage.config import Settings
-from triage.preflight import checks
-from triage.preflight.base import PreflightContext, Status
+from fraud_detective.config import Settings
+from fraud_detective.preflight import checks
+from fraud_detective.preflight.base import PreflightContext, Status
 
 
 def _project(conversation=True, memory=True):

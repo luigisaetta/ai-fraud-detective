@@ -1,9 +1,9 @@
 # The easy path: run the demo with the reference solutions
 
-In the labs you build four files with Codex: `triage/tools.py` (Lab 1),
-`triage/agent.py` (Lab 2), `triage/report.py` and `triage/cli.py` (Lab 3).
+In the labs you build four files with Codex: `fraud_detective/tools.py` (Lab 1),
+`fraud_detective/agent.py` (Lab 2), `fraud_detective/report.py` and `fraud_detective/cli.py` (Lab 3).
 Reference versions of all of them are in `solutions/`. On the easy path you
-copy them into `triage/` and go straight to a real investigation, without
+copy them into `fraud_detective/` and go straight to a real investigation, without
 Codex.
 
 Choose it when you want to see the agent at work first, when time is short,
@@ -21,7 +21,7 @@ Do not skip this step: it finds a configuration problem in seconds, with a
 hint on how to fix it, instead of after minutes of waiting for a sandbox.
 
 ```bash
-python -m triage.preflight --quick
+python -m fraud_detective.preflight --quick
 ```
 
 The quick preflight checks the local environment, the configuration, the OCI
@@ -32,7 +32,7 @@ failed check and rerun it before going on.
 Recommended, if you have a few minutes:
 
 ```bash
-python -m triage.preflight
+python -m fraud_detective.preflight
 ```
 
 The full preflight also creates a test sandbox, checks it and deletes it.
@@ -47,7 +47,7 @@ From the repository root:
 ./copy_solutions.sh all
 ```
 
-It copies the four files into `triage/`. A file that is already there (for
+It copies the four files into `fraud_detective/`. A file that is already there (for
 example code you built with Codex) is kept: the script says so. To replace
 it with the reference version, add `--force`:
 
@@ -72,11 +72,11 @@ call.
 Create the sample case, then run the investigation on a new sandbox:
 
 ```bash
-python -m triage.make_bundle
+python -m fraud_detective.make_bundle
 ```
 
 ```bash
-python -m triage.cli bundles/halden-ap-q3-2026.zip
+python -m fraud_detective.cli bundles/halden-ap-q3-2026.zip
 ```
 
 Starting a sandbox can take several minutes. The CLI checks the bundle
@@ -91,7 +91,7 @@ The CLI deletes the sandbox it created. If the service was slow to stop it,
 or if you used `--keep`, remove the leftovers:
 
 ```bash
-python -m triage.cleanup --delete
+python -m fraud_detective.cleanup --delete
 ```
 
 ## Going back to the labs

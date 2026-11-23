@@ -13,8 +13,8 @@ from unittest.mock import patch
 import pytest
 
 from tests.unit.fakes import FakeSandboxClient
-from triage.sandbox import CommandResult, SandboxError, SandboxSession
-from triage.tools import (
+from fraud_detective.sandbox import CommandResult, SandboxError, SandboxSession
+from fraud_detective.tools import (
     BUNDLE_DIR,
     DEFAULT_TIMEOUT_SECONDS,
     MAX_GREP_MATCHES,

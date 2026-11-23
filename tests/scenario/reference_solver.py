@@ -8,7 +8,7 @@ Description: A reference solution of the sample case, written the way the
 
     It proves that the findings can be reached with code. The tests run it
     on the generated bundle; tests/scenario/sandbox_check.py runs it in a
-    real sandbox. It never imports the triage package, so it can be copied
+    real sandbox. It never imports the fraud_detective package, so it can be copied
     alone.
 
 Usage:

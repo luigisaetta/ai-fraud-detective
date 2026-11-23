@@ -14,9 +14,9 @@ Description: Command line entry point of the preflight check. Verifies, in
 
 Usage (from the repository root):
 
-    python -m triage.preflight            # all checks
-    python -m triage.preflight --quick    # no sandbox is created
-    python -m triage.preflight --keep     # leave the test sandbox running
+    python -m fraud_detective.preflight            # all checks
+    python -m fraud_detective.preflight --quick    # no sandbox is created
+    python -m fraud_detective.preflight --keep     # leave the test sandbox running
 
 Exit code: 0 when no check failed, 1 otherwise.
 """
@@ -24,9 +24,9 @@ Exit code: 0 when no check failed, 1 otherwise.
 import argparse
 import sys
 
-from triage.preflight.base import Check, PreflightContext, Status
-from triage.preflight.environment import LocalEnvironmentCheck
-from triage.preflight.runner import ConsoleReporter, PreflightRunner
+from fraud_detective.preflight.base import Check, PreflightContext, Status
+from fraud_detective.preflight.environment import LocalEnvironmentCheck
+from fraud_detective.preflight.runner import ConsoleReporter, PreflightRunner
 
 
 def build_checks(quick: bool) -> list[Check]:
@@ -42,7 +42,7 @@ def build_checks(quick: bool) -> list[Check]:
         The checks.
     """
     # pylint: disable-next=import-outside-toplevel
-    from triage.preflight.checks import (
+    from fraud_detective.preflight.checks import (
         CleanupCheck,
         ConfigurationCheck,
         FileTransferCheck,
@@ -80,7 +80,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         argv: The arguments; ``sys.argv[1:]`` when omitted.
     """
     parser = argparse.ArgumentParser(
-        prog="python -m triage.preflight",
+        prog="python -m fraud_detective.preflight",
         description="Check that the environment is ready for the lab.",
     )
     parser.add_argument(
@@ -122,7 +122,9 @@ def main(argv: list[str] | None = None) -> int:
         raise import_error  # the packages look fine, yet the import failed
 
     # Phase 2: everything else; the required packages are now known to work.
-    from triage.config import Settings  # pylint: disable=import-outside-toplevel
+    from fraud_detective.config import (
+        Settings,
+    )  # pylint: disable=import-outside-toplevel
 
     context = PreflightContext(settings=Settings.load(), keep_sandbox=args.keep)
     results = PreflightRunner(later_checks, reporter).run(context)

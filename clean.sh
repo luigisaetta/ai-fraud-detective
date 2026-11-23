@@ -9,9 +9,9 @@
 #     solutions are never touched.
 #
 # Usage:
-#     ./clean.sh lab1     # triage/tools.py and tests/lab1/test_extra.py
-#     ./clean.sh lab2     # triage/agent.py, tests/lab2/test_extra.py, try_agent.py
-#     ./clean.sh lab3     # triage/report.py, triage/cli.py, tests/lab3/test_extra.py
+#     ./clean.sh lab1     # fraud_detective/tools.py and tests/lab1/test_extra.py
+#     ./clean.sh lab2     # fraud_detective/agent.py, tests/lab2/test_extra.py, try_agent.py
+#     ./clean.sh lab3     # fraud_detective/report.py, fraud_detective/cli.py, tests/lab3/test_extra.py
 #     ./clean.sh all      # the three labs, plus out/ and the generated bundles
 
 set -euo pipefail
@@ -26,14 +26,14 @@ usage() {
 [[ $# -eq 1 ]] || usage
 
 case "$1" in
-    lab1) files=(triage/tools.py tests/lab1/test_extra.py) ;;
-    lab2) files=(triage/agent.py tests/lab2/test_extra.py try_agent.py) ;;
-    lab3) files=(triage/report.py triage/cli.py tests/lab3/test_extra.py) ;;
+    lab1) files=(fraud_detective/tools.py tests/lab1/test_extra.py) ;;
+    lab2) files=(fraud_detective/agent.py tests/lab2/test_extra.py try_agent.py) ;;
+    lab3) files=(fraud_detective/report.py fraud_detective/cli.py tests/lab3/test_extra.py) ;;
     all)
         files=(
-            triage/tools.py tests/lab1/test_extra.py
-            triage/agent.py tests/lab2/test_extra.py try_agent.py
-            triage/report.py triage/cli.py tests/lab3/test_extra.py
+            fraud_detective/tools.py tests/lab1/test_extra.py
+            fraud_detective/agent.py tests/lab2/test_extra.py try_agent.py
+            fraud_detective/report.py fraud_detective/cli.py tests/lab3/test_extra.py
             out bundles/*.zip
         )
         ;;
@@ -48,7 +48,7 @@ for path in "${files[@]}"; do
         removed=$((removed + 1))
     fi
 done
-find triage tests -name __pycache__ -type d -prune -exec rm -rf {} +
+find fraud_detective tests -name __pycache__ -type d -prune -exec rm -rf {} +
 
 if [[ $removed -eq 0 ]]; then
     echo "nothing to remove for $1"

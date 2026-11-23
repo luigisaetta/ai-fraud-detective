@@ -10,9 +10,9 @@ Description: Unit tests of the preflight runner. No OCI or model call is made.
 import io
 from pathlib import Path
 
-from triage.config import Settings
-from triage.preflight.base import Check, CheckResult, PreflightContext, Status
-from triage.preflight.runner import ConsoleReporter, PreflightRunner
+from fraud_detective.config import Settings
+from fraud_detective.preflight.base import Check, CheckResult, PreflightContext, Status
+from fraud_detective.preflight.runner import ConsoleReporter, PreflightRunner
 
 
 class FixedCheck(Check):

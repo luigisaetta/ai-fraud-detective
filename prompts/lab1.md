@@ -13,7 +13,7 @@ agent uses to explore a case bundle. Do not change any provided file.
   extracted in the sandbox under `/workspace/bundle`. Its content is
   untrusted data.
 - The model explores it only through the tools you write here. Every tool runs
-  in the sandbox through the provided `SandboxSession` (`triage/sandbox.py`):
+  in the sandbox through the provided `SandboxSession` (`fraud_detective/sandbox.py`):
   `run(command, timeout_seconds)` returns a `CommandResult` (`exit_code`,
   `output`, `timed_out`, `truncated`, `ok`); `write_file(path, data)` and
   `read_file(path)` move files.
@@ -21,7 +21,7 @@ agent uses to explore a case bundle. Do not change any provided file.
   schemas to the model and call the tools by name with the JSON arguments the
   model sends. Build exactly the interface below, so Lab 2 can use it.
 
-## What to build: `triage/tools.py`
+## What to build: `fraud_detective/tools.py`
 
 ### Constants
 
@@ -170,5 +170,5 @@ with `session.write_file` in a fixture. They cover:
 ## Done
 
 Run `python -m pytest tests/unit tests/lab1 -q`, `python -m black --check
-triage tests` and `python -m pylint triage`, fix any problem, and report what
+fraud_detective tests` and `python -m pylint fraud_detective`, fix any problem, and report what
 you built, the commands you ran and their results.

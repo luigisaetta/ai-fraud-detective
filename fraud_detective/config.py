@@ -15,7 +15,7 @@ Description: Application settings, from two sources:
 
 Usage:
 
-    from triage.config import Settings
+    from fraud_detective.config import Settings
 
     settings = Settings.load()
     problems = settings.validate()

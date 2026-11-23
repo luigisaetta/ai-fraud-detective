@@ -16,7 +16,7 @@ config/
   project-short-term-memory.json   OCI project: short-term memory and compaction
   sandbox-project-deny-all.json    OCI project: sandboxes with DENY_ALL networking
 .env.example                       API key template; copy to your local .env
-triage/
+fraud_detective/
   config.py                        settings and secret loading (provided)
   oci_clients.py                   OCI SDK clients (provided)
   llm.py                           configured model client (provided)
@@ -44,7 +44,7 @@ out/                               generated Markdown and JSON reports
 The `(provided)` modules supply the infrastructure used by the labs.
 Labs 1–3 focus on `tools.py`, `agent.py`, `report.py` and `cli.py`; follow
 each guide and its Codex prompt to implement or review those modules.
-You will create these modules in `triage/` as you complete Labs 1–3.
+You will create these modules in `fraud_detective/` as you complete Labs 1–3.
 
 Each lab has a guide in `labs/`, a Codex prompt in `prompts/` and
 acceptance tests in `tests/labN/`. Reference solutions in `solutions/`

@@ -17,7 +17,7 @@ Prepare everything the next labs need, and prove that it works:
 - a sandbox that starts, runs commands, moves files and cannot reach the
   internet.
 
-The **preflight** (`python -m triage.preflight`) checks all of this in one
+The **preflight** (`python -m fraud_detective.preflight`) checks all of this in one
 run and tells you what to fix.
 
 ## Concepts
@@ -116,7 +116,7 @@ Configuration: edit `config/settings.toml`:
 ### 4. Run the quick preflight
 
 ```bash
-python -m triage.preflight --quick
+python -m fraud_detective.preflight --quick
 ```
 
 It checks your environment, the configuration, the OCI credentials, the
@@ -130,7 +130,7 @@ run the preflight again.
 ### 5. Run the full preflight
 
 ```bash
-python -m triage.preflight
+python -m fraud_detective.preflight
 ```
 
 It adds the sandbox checks: it creates a test sandbox, looks for the tools
@@ -159,13 +159,13 @@ All checks passed. You are ready for Lab 1.
 
 If the cleanup only warns that the sandbox is still stopping, the stop was
 requested and the service is slow to finish it: delete the sandbox later
-with `python -m triage.cleanup --delete` (see Lab 3, "Clean up").
+with `python -m fraud_detective.cleanup --delete` (see Lab 3, "Clean up").
 
-You do not need to keep this sandbox: in Lab 3 the triage command creates
+You do not need to keep this sandbox: in Lab 3 the investigation command creates
 its own, and can keep it for reuse. To leave the test sandbox running and
 explore it now, add `--keep`: the preflight prints its id, and the sandbox
 expires after 20 minutes (it then becomes `STOPPED`: delete it with
-`python -m triage.cleanup --delete`).
+`python -m fraud_detective.cleanup --delete`).
 
 ### 6. Read AGENTS.md
 
@@ -176,7 +176,7 @@ check that Codex followed it.
 
 ## Done when
 
-- `python -m triage.preflight` ends with "All checks passed" (a cleanup
+- `python -m fraud_detective.preflight` ends with "All checks passed" (a cleanup
   warning is acceptable).
 - You can explain why the project uses `DENY_ALL` and where secrets and
   configuration live.

@@ -5,7 +5,7 @@
 [![Tests: pytest](https://img.shields.io/badge/tests-pytest-blue.svg)](https://docs.pytest.org/)
 [![Python 3.12+](https://img.shields.io/badge/python-3.12%2B-blue.svg)](https://www.python.org/downloads/)
 
-<!-- TODO: new workshop illustration (the support-triage image no longer fits). -->
+![Workshop overview: build an AI fraud agent with Codex, investigate accounts payable data in isolated OCI Sandboxes, and produce an evidence-based forensic report.](images/fraud-detective-workshop.png)
 
 Most payment fraud is not hidden in a single document. It shows up in the
 connections across systems: a supplier's bank account that was changed
@@ -40,9 +40,9 @@ will learn in each lab.
 | Lab | Guide | You work on |
 |-----|-------|-------------|
 | 0 | [Setup and preflight](labs/lab0.md) | Environment, OCI project and configuration |
-| 1 | [Sandbox tools](labs/lab1.md) | `triage/tools.py` |
-| 2 | [Agent loop](labs/lab2.md) | `triage/agent.py` |
-| 3 | [Report and end-to-end run](labs/lab3.md) | `triage/report.py`, `triage/cli.py` |
+| 1 | [Sandbox tools](labs/lab1.md) | `fraud_detective/tools.py` |
+| 2 | [Agent loop](labs/lab2.md) | `fraud_detective/agent.py` |
+| 3 | [Report and end-to-end run](labs/lab3.md) | `fraud_detective/report.py`, `fraud_detective/cli.py` |
 
 ## The case
 
@@ -198,7 +198,7 @@ credentials, project, permissions and model tool calling. It calls the model
 but **does not create a sandbox**:
 
 ```bash
-python -m triage.preflight --quick
+python -m fraud_detective.preflight --quick
 ```
 
 If a check fails, follow the hint printed below it, fix the problem and rerun
@@ -210,7 +210,7 @@ Run the full preflight to create a test sandbox, check its tools and file
 transfer, verify network isolation, and clean it up:
 
 ```bash
-python -m triage.preflight
+python -m fraud_detective.preflight
 ```
 
 Under normal conditions, sandbox creation and deletion together take less
@@ -219,7 +219,7 @@ shows progress while you wait. You can read the Lab 1 guide in the meantime.
 
 Continue when the checks pass. A warning that cleanup is still waiting for the
 sandbox to stop is acceptable: delete it later with
-`python -m triage.cleanup --delete`.
+`python -m fraud_detective.cleanup --delete`.
 
 ## Work through Labs 1–3
 
@@ -232,7 +232,7 @@ Start with the [Lab 1 guide](labs/lab1.md), then continue with
 4. Continue when the checks pass; the next lab builds on your work.
 
 Read [AGENTS.md](AGENTS.md) so you know the repository rules Codex follows.
-You will create the lab modules in `triage/` as you complete Labs 1–3.
+You will create the lab modules in `fraud_detective/` as you complete Labs 1–3.
 Reference implementations are available in `solutions/` for comparison or to
 catch up.
 
@@ -246,13 +246,13 @@ python -m pytest tests/unit tests/lab1 -q
 For later labs, run the test command in that lab's guide. Check formatting with:
 
 ```bash
-python -m black --check triage tests
+python -m black --check fraud_detective tests
 ```
 
 Then check the Python code for lint problems:
 
 ```bash
-python -m pylint triage
+python -m pylint fraud_detective
 ```
 
 ## Run your finished agent
@@ -260,7 +260,7 @@ python -m pylint triage
 After completing Lab 3, generate the sample case:
 
 ```bash
-python -m triage.make_bundle
+python -m fraud_detective.make_bundle
 ```
 
 This creates the bundle `bundles/halden-ap-q3-2026.zip` and, next to it, the
@@ -268,7 +268,7 @@ reference hash recorded in the case file, `bundles/halden-ap-q3-2026.sha256`.
 Investigate the bundle with the agent:
 
 ```bash
-python -m triage.cli bundles/halden-ap-q3-2026.zip --keep
+python -m fraud_detective.cli bundles/halden-ap-q3-2026.zip --keep
 ```
 
 The CLI verifies the bundle against the reference hash, prints each stage
@@ -282,7 +282,7 @@ command to reuse it. To run another investigation without waiting for a new
 sandbox, replace `YOUR_SANDBOX_ID` below with that ID:
 
 ```bash
-python -m triage.cli bundles/halden-ap-q3-2026.zip --sandbox-id YOUR_SANDBOX_ID
+python -m fraud_detective.cli bundles/halden-ap-q3-2026.zip --sandbox-id YOUR_SANDBOX_ID
 ```
 
 The CLI preserves an attached sandbox. Follow the Lab 3 cleanup instructions
@@ -304,7 +304,7 @@ before choosing a model.
 ## The easy path
 
 To run the demo without building the code with Codex, copy the reference
-solutions into `triage/` with `./copy_solutions.sh all` and go straight to a
+solutions into `fraud_detective/` with `./copy_solutions.sh all` and go straight to a
 real investigation (see: Lab3). See [The easy path](docs/easy-path.md).
 
 ## License

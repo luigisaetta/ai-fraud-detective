@@ -16,8 +16,8 @@ import pytest
 
 from tests.lab3.fakes import ModelFake, message, report_data, response, settings
 from tests.unit.fakes import FakeSandboxClient
-from triage.agent import AgentResult
-from triage.report import (
+from fraud_detective.agent import AgentResult
+from fraud_detective.report import (
     REPORT_REQUEST,
     REPORT_SCHEMA,
     REVIEW_NOTE,
@@ -30,8 +30,8 @@ from triage.report import (
     ReportWriter,
     render_markdown,
 )
-from triage.sandbox import SandboxError, SandboxSession
-from triage.tools import BUNDLE_DIR, ToolRegistry
+from fraud_detective.sandbox import SandboxError, SandboxSession
+from fraud_detective.tools import BUNDLE_DIR, ToolRegistry
 
 LEVELS = ["high", "medium", "low"]
 
@@ -343,7 +343,7 @@ def test_writer_from_settings() -> None:
     """Use the provided client factory with the configured model identifier."""
     configured = settings()
     client = ModelFake([response("r", message(json.dumps(report_data())))])
-    with patch("triage.report.ModelClientFactory") as factory:
+    with patch("fraud_detective.report.ModelClientFactory") as factory:
         factory.return_value.create.return_value = client
         writer = ReportWriter.from_settings(configured)
         factory.assert_called_once_with(configured)

@@ -26,9 +26,9 @@ import time
 
 from oci.exceptions import ServiceError
 
-from triage.llm import ModelClientFactory
-from triage.preflight.base import Check, CheckResult, PreflightContext
-from triage.sandbox import SandboxError, SandboxSession
+from fraud_detective.llm import ModelClientFactory
+from fraud_detective.preflight.base import Check, CheckResult, PreflightContext
+from fraud_detective.sandbox import SandboxError, SandboxSession
 
 #: Lifetime of the test sandbox: short, so a leftover is stopped soon, but
 #: long enough for a slow cold start, the checks and a slow stop.

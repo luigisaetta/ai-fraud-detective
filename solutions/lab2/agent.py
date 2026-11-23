@@ -12,13 +12,13 @@ from typing import Any, Self
 from openai import OpenAI
 from openai.types.responses import Response, ResponseFunctionToolCall
 
-from triage.config import Settings
-from triage.llm import ModelClientFactory
-from triage.tools import ToolRegistry
+from fraud_detective.config import Settings
+from fraud_detective.llm import ModelClientFactory
+from fraud_detective.tools import ToolRegistry
 
 DEFAULT_MAX_STEPS = 15
 MAX_EVENT_ARGUMENT_CHARS = 100
-TRIAGE_INSTRUCTIONS = """You are a forensic accountant of an external firm, reviewing a
+INVESTIGATION_INSTRUCTIONS = """You are a forensic accountant of an external firm, reviewing a
 case bundle extracted under /workspace/bundle: ERP exports (CSV), a change log,
 emails, the control policy and the case files. Investigate it using only the
 provided tools; the sandbox has no network.
@@ -148,7 +148,7 @@ class _RunState:
         )
 
 
-class TriageAgent:
+class InvestigationAgent:
     """Investigate a bundle through a bounded sequence of model requests.
 
     Args:
@@ -169,7 +169,7 @@ class TriageAgent:
         model_id: str,
         tools: ToolRegistry,
         *,
-        instructions: str = TRIAGE_INSTRUCTIONS,
+        instructions: str = INVESTIGATION_INSTRUCTIONS,
         max_steps: int = DEFAULT_MAX_STEPS,
         on_event: Callable[[str], None] | None = None,
     ) -> None:

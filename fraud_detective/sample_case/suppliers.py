@@ -14,8 +14,8 @@ from dataclasses import dataclass, field
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 
-from triage.sample_case import facts
-from triage.sample_case.records import (
+from fraud_detective.sample_case import facts
+from fraud_detective.sample_case.records import (
     BankAccount,
     Change,
     Supplier,

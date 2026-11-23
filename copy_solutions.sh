@@ -4,15 +4,15 @@
 # Date Last Modified: 2026-11-23
 # License: MIT
 # Description: Copies the reference solutions from solutions/labN/ into
-#     triage/, for the easy path (docs/easy-path.md) or to get past a lab.
-#     A file that already exists in triage/ (for example code built with
+#     fraud_detective/, for the easy path (docs/easy-path.md) or to get past a lab.
+#     A file that already exists in fraud_detective/ (for example code built with
 #     Codex) is not overwritten unless --force is given.
 #
 # Usage:
 #     ./copy_solutions.sh all        # the three labs: the demo is ready to run
-#     ./copy_solutions.sh lab1       # triage/tools.py
-#     ./copy_solutions.sh lab2       # triage/agent.py
-#     ./copy_solutions.sh lab3       # triage/report.py and triage/cli.py
+#     ./copy_solutions.sh lab1       # fraud_detective/tools.py
+#     ./copy_solutions.sh lab2       # fraud_detective/agent.py
+#     ./copy_solutions.sh lab3       # fraud_detective/report.py and fraud_detective/cli.py
 #     ./copy_solutions.sh all --force   # also replace existing files
 
 set -euo pipefail
@@ -47,7 +47,7 @@ esac
 
 skipped=0
 for source in "${files[@]}"; do
-    target="triage/$(basename "$source")"
+    target="fraud_detective/$(basename "$source")"
     if [[ -e "$target" && $force -eq 0 ]]; then
         echo "kept     $target (already exists)"
         skipped=$((skipped + 1))

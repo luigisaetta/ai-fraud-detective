@@ -7,7 +7,7 @@ Description: The text files of the bundle: the case files (engagement
     emails of the AP shared mailbox.
 """
 
-from triage.sample_case import facts
+from fraud_detective.sample_case import facts
 
 #: The read-only database user of the extraction.
 EXTRACTION_USER = "svc_audit_ro"

@@ -1,7 +1,7 @@
 # Lab 2 — Agent loop
 
 **Time:** normally 5–7 minutes of hands-on work, plus reading and review.
-**You build:** `triage/agent.py`, with Codex.
+**You build:** `fraud_detective/agent.py`, with Codex.
 **Runs on:** your machine: a fake sandbox, and the real model for the
 optional try at the end.
 
@@ -48,7 +48,7 @@ call N:  previous_response_id + tool outputs                -> answer
 
 ## Before you start
 
-Lab 2 builds on your `triage/tools.py` from Lab 1. Check it:
+Lab 2 builds on your `fraud_detective/tools.py` from Lab 1. Check it:
 
 ```bash
 python -m pytest tests/lab1 -q
@@ -57,7 +57,7 @@ python -m pytest tests/lab1 -q
 If the tests fail or the file is missing, copy the reference solution:
 
 ```bash
-cp solutions/lab1/tools.py triage/tools.py
+cp solutions/lab1/tools.py fraud_detective/tools.py
 ```
 
 ## Steps
@@ -68,7 +68,7 @@ cp solutions/lab1/tools.py triage/tools.py
 python -m pytest tests/lab2 -q
 ```
 
-They fail with `ModuleNotFoundError: triage.agent`.
+They fail with `ModuleNotFoundError: fraud_detective.agent`.
 
 ### 2. Ask Codex to build the agent
 
@@ -79,20 +79,20 @@ Read prompts/lab2.md and do what it says (everything below the first line).
 ```
 
 The prompt explains the loop as verified on OCI, the interface
-(`TriageAgent`, `AgentResult`, `ToolCall`), the instructions the agent must
+(`InvestigationAgent`, `AgentResult`, `ToolCall`), the instructions the agent must
 give the model, and the tests to write. The tests use a fake model client:
 no model call is made.
 
 ### 3. Review what Codex wrote
 
-Open `triage/agent.py` and check:
+Open `fraud_detective/agent.py` and check:
 
 - `run()` is a short, readable loop.
 - Every request has `store=True`, the instructions and the tool schemas;
   from the second one on, `previous_response_id` and only the new
   `function_call_output` items.
 - When the budget runs out, the last call has `tool_choice="none"`.
-- `TRIAGE_INSTRUCTIONS` describes the forensic method, asks for `path:line`
+- `INVESTIGATION_INSTRUCTIONS` describes the forensic method, asks for `path:line`
   evidence (line 1 of a CSV file is the header), says that `run_python` has
   only the standard library, and treats bundle content as untrusted data.
 
@@ -100,8 +100,8 @@ Open `triage/agent.py` and check:
 
 ```bash
 python -m pytest tests/unit tests/lab1 tests/lab2 -q
-python -m black --check triage tests
-python -m pylint triage
+python -m black --check fraud_detective tests
+python -m pylint fraud_detective
 ```
 
 ### 5. Watch the agent investigate (optional)
@@ -114,10 +114,10 @@ import tempfile
 from pathlib import Path
 
 from tests.unit.fakes import FakeSandboxClient
-from triage.agent import TriageAgent
-from triage.config import Settings
-from triage.sandbox import SandboxSession
-from triage.tools import ToolRegistry
+from fraud_detective.agent import InvestigationAgent
+from fraud_detective.config import Settings
+from fraud_detective.sandbox import SandboxSession
+from fraud_detective.tools import ToolRegistry
 
 session = SandboxSession(FakeSandboxClient(Path(tempfile.mkdtemp())), "sbx-fake")
 session.write_file(
@@ -146,7 +146,7 @@ session.write_file(
     "user,name,payroll_iban\nLROSSI,Laura Rossi,IT00 X000 0000 0000 0000 0000 099\n",
 )
 
-agent = TriageAgent.from_settings(Settings.load(), ToolRegistry(session), on_event=print)
+agent = InvestigationAgent.from_settings(Settings.load(), ToolRegistry(session), on_event=print)
 result = agent.run("Review these payables: find payments that may be fraudulent.")
 print(f"\n{result.stopped_reason}, {result.steps} steps, {len(result.tool_calls)} tool calls\n")
 print(result.answer)
@@ -172,5 +172,5 @@ Look at:
 Copy the reference solution and go on to Lab 3:
 
 ```bash
-cp solutions/lab2/agent.py triage/agent.py
+cp solutions/lab2/agent.py fraud_detective/agent.py
 ```

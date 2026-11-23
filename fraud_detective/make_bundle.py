@@ -24,10 +24,10 @@ Description: Writes the bundle of the sample case and the reference hash
 
 Usage:
 
-    python -m triage.make_bundle                 # bundles/halden-ap-q3-2026.zip
-    python -m triage.make_bundle --output my.zip
-    python -m triage.make_bundle --answer-key    # print the answer key (Markdown)
-    python -m triage.make_bundle --preview       # print a few lines of every file
+    python -m fraud_detective.make_bundle                 # bundles/halden-ap-q3-2026.zip
+    python -m fraud_detective.make_bundle --output my.zip
+    python -m fraud_detective.make_bundle --answer-key    # print the answer key (Markdown)
+    python -m fraud_detective.make_bundle --preview       # print a few lines of every file
 """
 
 import argparse
@@ -36,7 +36,7 @@ import sys
 from pathlib import Path
 from typing import TextIO
 
-from triage.sample_case.case import SampleCase
+from fraud_detective.sample_case.case import SampleCase
 
 #: Default output file.
 DEFAULT_OUTPUT = Path("bundles/halden-ap-q3-2026.zip")

@@ -7,17 +7,17 @@ Paste everything below the line into Codex, from the repository root.
 Read `AGENTS.md` and follow it. Then build Lab 3: the structured forensic
 report and the command line that verifies a case bundle and runs a whole
 investigation on a real OCI Sandbox. Do not change any provided file, and do not change
-`triage/tools.py` or `triage/agent.py`.
+`fraud_detective/tools.py` or `fraud_detective/agent.py`.
 
 ## Context
 
-- `triage/agent.py` (Lab 2): `TriageAgent.from_settings(settings, tools,
+- `fraud_detective/agent.py` (Lab 2): `InvestigationAgent.from_settings(settings, tools,
   max_steps=..., on_event=...)`, `run(task) -> AgentResult` with `answer`,
   `response_id`, `stopped_reason`, `steps`, `tool_calls`, `input_tokens`,
   `output_tokens`. The conversation is stored on the server (`store=True`).
-- `triage/tools.py` (Lab 1): `ToolRegistry(session)`, `call(name,
+- `fraud_detective/tools.py` (Lab 1): `ToolRegistry(session)`, `call(name,
   arguments) -> str`; `read_file` returns lines as `path:line: text`.
-- `triage/ingest.py` (provided): integrity and upload of a bundle.
+- `fraud_detective/ingest.py` (provided): integrity and upload of a bundle.
   - `reference_hash(bundle) -> str` reads the reference SHA-256 from the
     `.sha256` file next to the zip (it stands for the value recorded in the
     case file); `verify_hash(path, expected) -> str` checks a local zip
@@ -28,13 +28,13 @@ investigation on a real OCI Sandbox. Do not change any provided file, and do not
     sandbox**, and extracts it under `/workspace/bundle`; raises
     `BundleError`. `BundleSummary.describe()` gives one line for the console;
     `sha256` and `verified_in_sandbox` report the checks.
-- `triage/sandbox.py` (provided): `SandboxManager.from_settings(settings,
+- `fraud_detective/sandbox.py` (provided): `SandboxManager.from_settings(settings,
   OciClients(settings))`, `create(display_name=..., on_progress=...)`,
   `attach(sandbox_id)`; `SandboxSession.snapshot() -> str`,
   `close(on_progress=...)` (stops and deletes only a sandbox the session
   created), `sandbox_id`. Creating a sandbox can take minutes: always pass
   `on_progress`.
-- `triage/make_bundle.py` (provided): `python -m triage.make_bundle` writes
+- `fraud_detective/make_bundle.py` (provided): `python -m fraud_detective.make_bundle` writes
   the sample case, `bundles/halden-ap-q3-2026.zip`, and its reference hash,
   `bundles/halden-ap-q3-2026.sha256`.
 
@@ -58,7 +58,7 @@ client.responses.create(
 The answer is a JSON document that follows `REPORT_SCHEMA` (the `text` of the
 `output_text` parts of the `message` items).
 
-## What to build (1): `triage/report.py`
+## What to build (1): `fraud_detective/report.py`
 
 A fraud review finds several problems, each with its own evidence and amount,
 so the report is a list of findings, not one root cause.
@@ -128,15 +128,15 @@ so the report is a list of findings, not one root cause.
   evidence table with verified ✔ / ✘), Cleared items, Timeline, Next steps as
   a numbered list.
 
-## What to build (2): `triage/cli.py`
+## What to build (2): `fraud_detective/cli.py`
 
 ```
-python -m triage.cli BUNDLE [--sandbox-id ID] [--keep] [--snapshot]
+python -m fraud_detective.cli BUNDLE [--sandbox-id ID] [--keep] [--snapshot]
                             [--max-steps N] [--task TEXT] [--output-dir DIR]
                             [--expected-sha256 HEX]
 ```
 
-- `TriageApp(settings, manager, model_client, output_dir, stream)`, with
+- `InvestigationApp(settings, manager, model_client, output_dir, stream)`, with
   `run(bundle, *, sandbox_id=None, keep=False, snapshot=False, max_steps=...,
   task=..., expected_sha256=None) -> Path` (the Markdown report). `main()` builds the real
   dependencies from `Settings.load()`, parses the arguments, runs the app and
@@ -200,10 +200,10 @@ python -m triage.cli BUNDLE [--sandbox-id ID] [--keep] [--snapshot]
 ## Console output
 
 The CLI is what participants watch for many minutes: make it pleasant to
-read, in the same style as the preflight (`python -m triage.preflight`).
+read, in the same style as the preflight (`python -m fraud_detective.preflight`).
 Use only the standard library (no `rich` or other new dependency), and keep
 this code in a small console class of its own in `cli.py` (for example
-`ConsoleView`), not scattered `print` calls in `TriageApp`.
+`ConsoleView`), not scattered `print` calls in `InvestigationApp`.
 
 Target layout (non-terminal stream, so no colors):
 
@@ -318,7 +318,7 @@ They cover:
 - Integrity: a missing `.sha256` file or a changed bundle stops the run
   before any sandbox is created, with one error line; `--expected-sha256`
   replaces the file.
-- `TriageApp.run` end to end with the fakes: the six steps in order; the
+- `InvestigationApp.run` end to end with the fakes: the six steps in order; the
   first request carries `task_with_integrity(task, sha256)`; the report
   files are written, with the bundle hash;
   a created sandbox is closed; with `keep=True` it is not, and its id is
@@ -336,7 +336,7 @@ They cover:
 ## Done
 
 Run `python -m pytest tests/unit tests/lab1 tests/lab2 tests/lab3 -q`,
-`python -m black --check triage tests` and `python -m pylint triage`, fix
+`python -m black --check fraud_detective tests` and `python -m pylint fraud_detective`, fix
 any problem, and report what you built, the commands you ran and their
 results. Do not run the CLI against OCI: creating a sandbox takes minutes,
 and the user will run it.

@@ -8,7 +8,7 @@ web domains end in `.example`, a name reserved for examples.
 What to look at: column names and formats, the change log, amounts and
 dates, the roles, and whether anything looks artificial. The full story and
 the open questions are in the [scenario design](scenario-design.md),
-sections 3 to 5 and 12. Generated with `python -m triage.make_bundle --preview`.
+sections 3 to 5 and 12. Generated with `python -m fraud_detective.make_bundle --preview`.
 
 ### `case/engagement_letter.txt` (34 lines)
 

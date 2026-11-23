@@ -18,15 +18,15 @@ from unittest.mock import patch
 import pytest
 
 from tests.unit.fakes import FakeSandboxClient
-from triage import ingest
-from triage.ingest import (
+from fraud_detective import ingest
+from fraud_detective.ingest import (
     BundleError,
     BundleInspector,
     BundleUploader,
     reference_hash,
     verify_hash,
 )
-from triage.sandbox import SandboxSession
+from fraud_detective.sandbox import SandboxSession
 
 
 @pytest.fixture(name="client")

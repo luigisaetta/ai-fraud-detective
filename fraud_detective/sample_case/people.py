@@ -12,8 +12,8 @@ Description: Generates the employees (hr/employees.csv) and the ERP roles
 import random
 from datetime import date, timedelta
 
-from triage.sample_case import facts
-from triage.sample_case.records import Employee, RoleGrant, fake_iban
+from fraud_detective.sample_case import facts
+from fraud_detective.sample_case.records import Employee, RoleGrant, fake_iban
 
 #: Number of employees.
 EMPLOYEES = 250

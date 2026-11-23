@@ -1,7 +1,7 @@
 # Lab 1 — Sandbox tools
 
 **Time:** normally 5–7 minutes of hands-on work, plus reading and review.
-**You build:** `triage/tools.py`, with Codex.
+**You build:** `fraud_detective/tools.py`, with Codex.
 **Runs on:** your machine, against a fake sandbox. No OCI calls.
 
 ## Goal
@@ -43,7 +43,7 @@ CSV file, line 1 is the header and line *n* is data row *n − 1*.
 
 ## What is provided
 
-- `triage/sandbox.py` — `SandboxSession`: `run(command, timeout_seconds)`,
+- `fraud_detective/sandbox.py` — `SandboxSession`: `run(command, timeout_seconds)`,
   `write_file(path, data)`, `read_file(path)`. You use it; you do not change it.
 - `tests/unit/fakes.py` — `FakeSandboxClient`: runs the sandbox commands on
   your machine in a temporary directory, so the tests are fast and free.
@@ -58,7 +58,7 @@ CSV file, line 1 is the header and line *n* is data row *n − 1*.
 python -m pytest tests/lab1 -q
 ```
 
-They fail with `ModuleNotFoundError: triage.tools`: the module does not exist
+They fail with `ModuleNotFoundError: fraud_detective.tools`: the module does not exist
 yet. Your job is to make them pass.
 
 ### 2. Ask Codex to build the tools
@@ -71,12 +71,12 @@ Read prompts/lab1.md and do what it says (everything below the first line).
 
 The prompt gives Codex the interface (`Tool`, the four tools,
 `ToolRegistry`), the output format with examples, the security rules and the
-tests to pass. Codex writes `triage/tools.py`, runs the tests, black and
+tests to pass. Codex writes `fraud_detective/tools.py`, runs the tests, black and
 pylint, and reports.
 
 ### 3. Review what Codex wrote
 
-Open `triage/tools.py` and check:
+Open `fraud_detective/tools.py` and check:
 
 - Each tool has its own class, with a `schema()` for the model and a `run()`
   that builds one short command for the sandbox.
@@ -89,8 +89,8 @@ Open `triage/tools.py` and check:
 
 ```bash
 python -m pytest tests/unit tests/lab1 -q
-python -m black --check triage tests
-python -m pylint triage
+python -m black --check fraud_detective tests
+python -m pylint fraud_detective
 ```
 
 All tests pass, black reports nothing, pylint reports no problems.
@@ -102,8 +102,8 @@ import tempfile
 from pathlib import Path
 
 from tests.unit.fakes import FakeSandboxClient
-from triage.sandbox import SandboxSession
-from triage.tools import ToolRegistry
+from fraud_detective.sandbox import SandboxSession
+from fraud_detective.tools import ToolRegistry
 
 session = SandboxSession(FakeSandboxClient(Path(tempfile.mkdtemp())), "sbx-fake")
 session.write_file("/workspace/bundle/ap/payments.csv", "id,vendor,amount\nP-1,V-17,1250.00\n")
@@ -128,5 +128,5 @@ bundle.
 Copy the reference solution and go on to Lab 2:
 
 ```bash
-cp solutions/lab1/tools.py triage/tools.py
+cp solutions/lab1/tools.py fraud_detective/tools.py
 ```

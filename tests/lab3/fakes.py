@@ -18,7 +18,7 @@ from openai.types.responses import (
 )
 
 from tests.unit.fakes import FakeSandboxClient
-from triage.config import ModelProvider, OciAuth, Settings
+from fraud_detective.config import ModelProvider, OciAuth, Settings
 
 
 class ModelFake:

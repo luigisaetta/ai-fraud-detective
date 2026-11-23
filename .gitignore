@@ -11,10 +11,10 @@ bundles/*.sha256
 
 # Lab code that participants build with Codex: never commit it.
 # The reference versions are in solutions/labN/.
-triage/tools.py
-triage/agent.py
-triage/report.py
-triage/cli.py
+fraud_detective/tools.py
+fraud_detective/agent.py
+fraud_detective/report.py
+fraud_detective/cli.py
 
 # Personal notes, not versioned for now.
 lsnotes/

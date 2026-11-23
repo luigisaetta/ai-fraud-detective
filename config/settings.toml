@@ -1,4 +1,4 @@
-# Support Bundle Triage Agent: configuration.
+# AI Fraud Detective: configuration.
 #
 # This file is versioned and holds no secrets. The API keys go in .env
 # (see .env.example), which is never committed.

@@ -28,12 +28,12 @@ from tests.lab3.fakes import (
     response,
     settings,
 )
-from triage import cli
-from triage.cli import BOX_WIDTH, DEFAULT_TASK, TriageApp
-from triage.config import Settings
-from triage.ingest import BundleError
-from triage.report import ReportError
-from triage.sandbox import SandboxError, SandboxManager, SandboxSession
+from fraud_detective import cli
+from fraud_detective.cli import BOX_WIDTH, DEFAULT_TASK, InvestigationApp
+from fraud_detective.config import Settings
+from fraud_detective.ingest import BundleError
+from fraud_detective.report import ReportError
+from fraud_detective.sandbox import SandboxError, SandboxManager, SandboxSession
 
 COLOR_CODE = re.compile(r"\033\[[0-9;]*m")
 BOX_CHARS = ("╭", "│", "╰")
@@ -101,13 +101,13 @@ class Harness:
     stream: io.StringIO
     settings: Settings
 
-    def app(self) -> TriageApp:
+    def app(self) -> InvestigationApp:
         """Construct an app with real orchestration and fake external services.
 
         Returns:
             Application backed by the current test's resources.
         """
-        return TriageApp(
+        return InvestigationApp(
             self.settings, self.manager, self.model, self.output, self.stream
         )
 
@@ -268,7 +268,7 @@ def test_keep_prints_reuse_command(harness: Harness) -> None:
     assert "stop" not in harness.client.calls and "delete" not in harness.client.calls
     assert "Sandbox kept: ocid1.sandbox.fake" in harness.stream.getvalue()
     assert "--sandbox-id ocid1.sandbox.fake" in harness.stream.getvalue()
-    assert "python -m triage.cli" in harness.stream.getvalue()
+    assert "python -m fraud_detective.cli" in harness.stream.getvalue()
 
 
 def test_attached_sandbox_is_never_closed(harness: Harness) -> None:
@@ -457,8 +457,8 @@ def test_many_nonterminal_states_are_throttled(harness: Harness) -> None:
     assert harness.stream.isatty() is False
     harness.client.queue_states(["CREATING"] * 100 + ["RUNNING"])
     with (
-        patch("triage.sandbox.time.sleep"),
-        patch("triage.cli.monotonic", side_effect=range(1000)),
+        patch("fraud_detective.sandbox.time.sleep"),
+        patch("fraud_detective.cli.monotonic", side_effect=range(1000)),
     ):
         harness.app().run(harness.bundle)
     lines = harness.stream.getvalue().splitlines()
@@ -473,7 +473,7 @@ def test_many_nonterminal_states_are_throttled(harness: Harness) -> None:
 def test_state_changes_print_immediately(harness: Harness) -> None:
     """Print first state, periodic updates and state changes on redirected streams."""
     times = [0, 1, 29, 30, 31, 59, 60, 61, 62, 63]
-    with patch("triage.cli.monotonic", side_effect=times):
+    with patch("fraud_detective.cli.monotonic", side_effect=times):
         progress = cli._Progress(harness.stream)
         for index in range(7):
             progress(f"CREATING, {times[index]} s")
@@ -494,7 +494,7 @@ def test_terminal_progress_rewrites_and_finishes_each_step(harness: Harness) -> 
     """Keep state messages on one terminal line and terminate it before the next step."""
     harness.stream = TerminalStream()
     harness.client.queue_states(["CREATING"] * 20 + ["RUNNING"])
-    with patch("triage.sandbox.time.sleep"):
+    with patch("fraud_detective.sandbox.time.sleep"):
         harness.app().run(harness.bundle)
     text = plain(harness.stream.getvalue())
     assert len(re.findall(r"\r[^\n\r]*CREATING,", text)) == 20
@@ -522,14 +522,15 @@ def test_terminal_progress_finishes_after_creation_error(harness: Harness) -> No
 def _main(harness: Harness, arguments: list[str]) -> int:
     """Run the real parser and main, replacing only external dependency factories."""
     with (
-        patch("sys.argv", ["triage.cli", str(harness.bundle), *arguments]),
+        patch("sys.argv", ["fraud_detective.cli", str(harness.bundle), *arguments]),
         patch("sys.stdout", harness.stream),
-        patch("triage.cli.Settings.load", return_value=harness.settings),
-        patch("triage.cli.OciClients") as clients,
+        patch("fraud_detective.cli.Settings.load", return_value=harness.settings),
+        patch("fraud_detective.cli.OciClients") as clients,
         patch(
-            "triage.cli.SandboxManager.from_settings", return_value=harness.manager
+            "fraud_detective.cli.SandboxManager.from_settings",
+            return_value=harness.manager,
         ) as manager,
-        patch("triage.cli.ModelClientFactory") as model_factory,
+        patch("fraud_detective.cli.ModelClientFactory") as model_factory,
     ):
         model_factory.return_value.create.return_value = harness.model
         status = cli.main()

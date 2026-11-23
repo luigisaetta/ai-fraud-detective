@@ -2,7 +2,7 @@
 
 **Time:** normally 5–7 minutes of hands-on work, plus reading and review.
 Sandbox creation may occasionally take longer.
-**You build:** `triage/report.py` and `triage/cli.py`, with Codex.
+**You build:** `fraud_detective/report.py` and `fraud_detective/cli.py`, with Codex.
 **Runs on:** a real OCI Sandbox and the real model.
 
 ## Goal
@@ -11,7 +11,7 @@ Put everything together: one command verifies a case bundle, runs the
 investigation in an OCI Sandbox and writes a forensic report.
 
 ```
-python -m triage.cli bundles/halden-ap-q3-2026.zip
+python -m fraud_detective.cli bundles/halden-ap-q3-2026.zip
 ```
 
 1. **Integrity** — check the bundle against the reference hash of the case
@@ -52,7 +52,7 @@ python -m triage.cli bundles/halden-ap-q3-2026.zip
 
 ## Before you start
 
-Lab 3 builds on your `triage/tools.py` (Lab 1) and `triage/agent.py`
+Lab 3 builds on your `fraud_detective/tools.py` (Lab 1) and `fraud_detective/agent.py`
 (Lab 2). Check them:
 
 ```bash
@@ -62,13 +62,13 @@ python -m pytest tests/lab1 tests/lab2 -q
 If the tests fail or a file is missing, copy the reference solutions:
 
 ```bash
-cp solutions/lab1/tools.py solutions/lab2/agent.py triage/
+cp solutions/lab1/tools.py solutions/lab2/agent.py fraud_detective/
 ```
 
 Then write the sample case:
 
 ```bash
-python -m triage.make_bundle
+python -m fraud_detective.make_bundle
 ```
 
 It writes `bundles/halden-ap-q3-2026.zip`, the extraction run by Halden IT:
@@ -87,7 +87,7 @@ text that tries to give orders to the AI.
 python -m pytest tests/lab3 -q
 ```
 
-They fail with `ModuleNotFoundError`: `triage.report` and `triage.cli` do
+They fail with `ModuleNotFoundError`: `fraud_detective.report` and `fraud_detective.cli` do
 not exist yet.
 
 ### 2. Ask Codex to build the report and the CLI
@@ -103,10 +103,10 @@ sandbox. You will run the CLI yourself in step 5.
 
 ### 3. Review what Codex wrote
 
-- `triage/report.py`: `ReportWriter.write()` sends `previous_response_id`,
+- `fraud_detective/report.py`: `ReportWriter.write()` sends `previous_response_id`,
   `store=True` and the strict JSON schema; `EvidenceChecker` reads the first
   cited line of each evidence of each finding and never raises.
-- `triage/cli.py`: the six numbered steps; the integrity check comes before
+- `fraud_detective/cli.py`: the six numbered steps; the integrity check comes before
   the sandbox; the cleanup runs also after an error or Ctrl+C; a sandbox
   given with `--sandbox-id` is never deleted.
 
@@ -114,14 +114,14 @@ sandbox. You will run the CLI yourself in step 5.
 
 ```bash
 python -m pytest tests/unit tests/lab1 tests/lab2 tests/lab3 -q
-python -m black --check triage tests
-python -m pylint triage
+python -m black --check fraud_detective tests
+python -m pylint fraud_detective
 ```
 
 ### 5. Run the investigation on a real sandbox
 
 ```bash
-python -m triage.cli bundles/halden-ap-q3-2026.zip --keep
+python -m fraud_detective.cli bundles/halden-ap-q3-2026.zip --keep
 ```
 
 Sandbox creation is normally quick but may occasionally take several minutes.
@@ -154,7 +154,7 @@ any change to the zip makes step 1 fail, before a sandbox is created.
 Reuse the sandbox from step 5 — no start-up wait:
 
 ```bash
-python -m triage.cli bundles/halden-ap-q3-2026.zip --sandbox-id <sandbox-id>
+python -m fraud_detective.cli bundles/halden-ap-q3-2026.zip --sandbox-id <sandbox-id>
 ```
 
 Try `--snapshot` to save the workspace, or `--task` to ask a different
@@ -169,13 +169,13 @@ CLI prints a warning and the sandbox is left behind. Leftover sandboxes use
 quota. List the sandboxes of your project:
 
 ```bash
-python -m triage.cleanup
+python -m fraud_detective.cleanup
 ```
 
 Then remove them (the command shows the list and asks for a confirmation):
 
 ```bash
-python -m triage.cleanup --delete
+python -m fraud_detective.cleanup --delete
 ```
 
 It deletes the sandboxes that are `STOPPED` or `FAILED` and asks the running
@@ -196,5 +196,5 @@ run it only on the project you created for the labs.
 Copy the reference solution and run step 5:
 
 ```bash
-cp solutions/lab3/report.py solutions/lab3/cli.py triage/
+cp solutions/lab3/report.py solutions/lab3/cli.py fraud_detective/
 ```

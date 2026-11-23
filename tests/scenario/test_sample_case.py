@@ -22,10 +22,10 @@ from pathlib import Path
 import pytest
 
 from tests.scenario import reference_solver
-from triage import make_bundle
-from triage.sample_case import facts
-from triage.sample_case.case import MANIFEST, SampleCase
-from triage.sample_case.records import is_valid_iban, is_working_day
+from fraud_detective import make_bundle
+from fraud_detective.sample_case import facts
+from fraud_detective.sample_case.case import MANIFEST, SampleCase
+from fraud_detective.sample_case.records import is_valid_iban, is_working_day
 
 FRAUD_NUMBERS = [number for number, _, _ in facts.FRAUD_INVOICES]
 

@@ -18,7 +18,7 @@ Usage:
 
 from openai import OpenAI
 
-from triage.config import ModelProvider, Settings
+from fraud_detective.config import ModelProvider, Settings
 
 #: The OpenAI-compatible endpoint of OCI Generative AI, per region.
 OCI_OPENAI_BASE_URL = (

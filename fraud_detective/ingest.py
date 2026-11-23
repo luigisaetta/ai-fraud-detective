@@ -31,7 +31,7 @@ import zipfile
 from dataclasses import dataclass, replace
 from pathlib import Path, PurePosixPath
 
-from triage.sandbox import SandboxSession
+from fraud_detective.sandbox import SandboxSession
 
 #: Where the bundle is extracted in the sandbox.
 BUNDLE_DIR = "/workspace/bundle"

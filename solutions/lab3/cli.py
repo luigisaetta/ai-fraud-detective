@@ -22,12 +22,17 @@ from typing import TextIO
 from oci.exceptions import ServiceError
 from openai import APIError, OpenAI
 
-from triage.agent import DEFAULT_MAX_STEPS, AgentResult, TriageAgent
-from triage.config import Settings
-from triage.ingest import BundleError, BundleUploader, reference_hash, verify_hash
-from triage.llm import ModelClientFactory
-from triage.oci_clients import OciClients
-from triage.report import (
+from fraud_detective.agent import DEFAULT_MAX_STEPS, AgentResult, InvestigationAgent
+from fraud_detective.config import Settings
+from fraud_detective.ingest import (
+    BundleError,
+    BundleUploader,
+    reference_hash,
+    verify_hash,
+)
+from fraud_detective.llm import ModelClientFactory
+from fraud_detective.oci_clients import OciClients
+from fraud_detective.report import (
     REVIEW_NOTE,
     EvidenceChecker,
     FraudReport,
@@ -37,8 +42,8 @@ from triage.report import (
     money,
     render_markdown,
 )
-from triage.sandbox import SandboxError, SandboxManager, SandboxSession
-from triage.tools import ToolRegistry
+from fraud_detective.sandbox import SandboxError, SandboxManager, SandboxSession
+from fraud_detective.tools import ToolRegistry
 
 DEFAULT_TASK = (
     "Review the accounts payable in the bundle: find payments that may be "
@@ -272,7 +277,7 @@ class _RunOptions:
     expected_sha256: str | None
 
 
-class TriageApp:
+class InvestigationApp:
     """Coordinate an investigation with injected sandbox and model dependencies.
 
     Args:
@@ -371,7 +376,7 @@ class TriageApp:
             view.info("Creating sandbox: a cold start can take minutes.")
             with closing(view.progress()) as progress:
                 session = self._manager.create(
-                    display_name=f"triage-{options.bundle.stem}", on_progress=progress
+                    display_name=f"fraud-{options.bundle.stem}", on_progress=progress
                 )
         view.done(f"Sandbox {session.sandbox_id}")
         try:
@@ -405,7 +410,7 @@ class TriageApp:
         view.step(4, "Investigation")
         view.info("Waiting for the model and its tools.")
         tools = ToolRegistry(session)
-        agent = TriageAgent(
+        agent = InvestigationAgent(
             self._model_client,
             self._settings.model_id,
             tools,
@@ -481,7 +486,7 @@ class TriageApp:
             elif options.keep:
                 view.done(f"Sandbox kept: {session.sandbox_id}")
                 view.info(
-                    f"Reuse: python -m triage.cli {shlex.quote(str(options.bundle))} "
+                    f"Reuse: python -m fraud_detective.cli {shlex.quote(str(options.bundle))} "
                     f"--sandbox-id {shlex.quote(session.sandbox_id)}"
                 )
             else:
@@ -571,7 +576,7 @@ def main() -> int:
         view.error("Interrupted by the user.")
         return 130
     try:
-        TriageApp(
+        InvestigationApp(
             settings, manager, model_client, arguments.output_dir, sys.stdout
         ).run(
             arguments.bundle,
@@ -583,7 +588,7 @@ def main() -> int:
             expected_sha256=arguments.expected_sha256,
         )
     except _EXPECTED_ERRORS:
-        return 1  # TriageApp has already printed the error once.
+        return 1  # InvestigationApp has already printed the error once.
     except KeyboardInterrupt:
         return 130
     return 0

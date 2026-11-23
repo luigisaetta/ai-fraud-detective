@@ -17,9 +17,9 @@ from unittest.mock import patch
 from oci.exceptions import ServiceError
 import pytest
 
-from triage import cleanup
-from triage.cleanup import SandboxCleaner
-from triage.sandbox import SandboxManager
+from fraud_detective import cleanup
+from fraud_detective.cleanup import SandboxCleaner
+from fraud_detective.sandbox import SandboxManager
 
 
 class ProjectFake:
@@ -69,12 +69,12 @@ class ProjectFake:
 def fixture_project():
     return ProjectFake(
         {
-            "triage-sample": "RUNNING",
+            "fraud-sample": "RUNNING",
             "preflight-20261120": "STOPPED",
-            "triage-old": "FAILED",
-            "triage-busy": "STOPPING",
-            "triage-gone": "DELETED",
-            "support-bundle-triage": "STOPPED",
+            "fraud-old": "FAILED",
+            "fraud-busy": "STOPPING",
+            "fraud-gone": "DELETED",
+            "fraud-detective-old": "STOPPED",
         }
     )
 
@@ -88,11 +88,11 @@ def test_find_lists_all_pages_and_hides_deleted(project):
     cleaner, _ = make_cleaner(project)
     names = [item.name for item in cleaner.find()]
     assert names == [
-        "triage-sample",
+        "fraud-sample",
         "preflight-20261120",
-        "triage-old",
-        "triage-busy",
-        "support-bundle-triage",
+        "fraud-old",
+        "fraud-busy",
+        "fraud-detective-old",
     ]
 
 
@@ -100,21 +100,21 @@ def test_clean_deletes_stopped_and_stops_running_without_waiting(project):
     cleaner, stream = make_cleaner(project)
     summary = cleaner.clean(cleaner.find())
     assert project.calls == [
-        "stop triage-sample",
+        "stop fraud-sample",
         "delete preflight-20261120",
-        "delete triage-old",
-        "delete support-bundle-triage",
+        "delete fraud-old",
+        "delete fraud-detective-old",
     ]
     assert (summary.deleted, summary.stopping, summary.skipped) == (3, 1, 1)
     assert "run this command again" in stream.getvalue()
-    assert "triage-busy: STOPPING, retry later" in stream.getvalue()
+    assert "fraud-busy: STOPPING, retry later" in stream.getvalue()
 
 
 def test_a_refused_request_does_not_stop_the_cleanup(project):
     project.refuse = {"preflight-20261120"}
     cleaner, stream = make_cleaner(project)
     summary = cleaner.clean(cleaner.find())
-    assert "delete triage-old" in project.calls
+    assert "delete fraud-old" in project.calls
     assert summary.skipped == 2
     assert "HTTP 409 Conflict" in stream.getvalue()
 
@@ -123,9 +123,11 @@ def run_main(project, arguments, answer="n"):
     stream = io.StringIO()
     manager = SandboxManager(project, "ocid1.project")
     with (
-        patch("triage.cleanup.Settings.load"),
-        patch("triage.cleanup.OciClients"),
-        patch("triage.cleanup.SandboxManager.from_settings", return_value=manager),
+        patch("fraud_detective.cleanup.Settings.load"),
+        patch("fraud_detective.cleanup.OciClients"),
+        patch(
+            "fraud_detective.cleanup.SandboxManager.from_settings", return_value=manager
+        ),
     ):
         status = cleanup.main(arguments, stream, ask=lambda prompt: answer)
     return status, stream.getvalue()
@@ -151,9 +153,11 @@ def test_main_yes_skips_the_question(project):
     stream = io.StringIO()
     manager = SandboxManager(project, "ocid1.project")
     with (
-        patch("triage.cleanup.Settings.load"),
-        patch("triage.cleanup.OciClients"),
-        patch("triage.cleanup.SandboxManager.from_settings", return_value=manager),
+        patch("fraud_detective.cleanup.Settings.load"),
+        patch("fraud_detective.cleanup.OciClients"),
+        patch(
+            "fraud_detective.cleanup.SandboxManager.from_settings", return_value=manager
+        ),
     ):
         assert cleanup.main(["--delete", "--yes"], stream, ask=never_asked) == 0
     assert len(project.calls) == 4

@@ -2,7 +2,7 @@
 Author: L. Saetta
 Date Last Modified: 2026-11-22
 License: MIT
-Description: OCI Sandboxes for the triage agent, in one module.
+Description: OCI Sandboxes for the fraud detective agent, in one module.
 
     - SandboxManager creates sandboxes in a Generative AI project: a new one
       (create), one seeded from a snapshot (restore), or a handle on one
@@ -62,8 +62,8 @@ from typing import Any
 from oci.exceptions import ServiceError
 from oci.generative_ai_sandbox import models
 
-from triage.config import Settings
-from triage.oci_clients import OciClients
+from fraud_detective.config import Settings
+from fraud_detective.oci_clients import OciClients
 
 # ---------------------------------------------------------------- constants
 
@@ -535,7 +535,7 @@ class SandboxManager:
             oci.exceptions.ServiceError: The service refused the request.
         """
         details = models.CreateSandboxDetails(
-            display_name=display_name or _generated_name("triage"),
+            display_name=display_name or _generated_name("fraud"),
             runtime=self._runtime,
             shape=self._shape,
             expires_in_minutes=lifetime_minutes or self._lifetime_minutes,
@@ -833,7 +833,7 @@ def _report(on_progress: ProgressCallback | None, message: str) -> None:
 
 
 def _generated_name(prefix: str) -> str:
-    """A unique, readable display name, for example ``triage-3f9c1a2b``."""
+    """A unique, readable display name, for example ``fraud-3f9c1a2b``."""
     return f"{prefix}-{uuid.uuid4().hex[:8]}"
 
 

@@ -13,7 +13,7 @@ import importlib.util
 import sys
 from importlib import metadata
 
-from triage.preflight.base import Check, CheckResult, PreflightContext
+from fraud_detective.preflight.base import Check, CheckResult, PreflightContext
 
 #: Minimum Python version.
 MIN_PYTHON = (3, 11)

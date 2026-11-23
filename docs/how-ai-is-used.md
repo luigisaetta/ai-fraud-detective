@@ -17,7 +17,7 @@ The rest of this note is about the second one.
 
 ## The model is the investigator
 
-`triage/agent.py` sends the model three things: the task ("review the
+`fraud_detective/agent.py` sends the model three things: the task ("review the
 accounts payable: find payments that may be fraudulent or wrong, quantify the
 exposure, cite the evidence"), the instructions of the agent, and the schemas
 of four tools (`list_files`, `read_file`, `grep`, `run_python`). There is no
@@ -81,7 +81,7 @@ ends a run that does not converge.
 
 ### 5. Writing the structured report
 
-`triage/report.py` does not resend anything. The report is **one more turn of
+`fraud_detective/report.py` does not resend anything. The report is **one more turn of
 the same server-side conversation**: the request carries only
 `previous_response_id`, the instruction "write the report" and a strict JSON
 schema. The model turns what it found into findings, each with its scheme,

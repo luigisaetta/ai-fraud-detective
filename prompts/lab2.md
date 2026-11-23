@@ -6,15 +6,15 @@ Paste everything below the line into Codex, from the repository root.
 
 Read `AGENTS.md` and follow it. Then build Lab 2: the agent loop that lets the
 model investigate a case bundle by calling the Lab 1 tools. Do not change
-any provided file, and do not change `triage/tools.py`.
+any provided file, and do not change `fraud_detective/tools.py`.
 
 ## Context
 
-- `triage/tools.py` (Lab 1) provides `ToolRegistry(session, ...)` with
+- `fraud_detective/tools.py` (Lab 1) provides `ToolRegistry(session, ...)` with
   `schemas()` (strict function tools for the Responses API) and
   `call(name, arguments)`, which runs a tool in the sandbox and always returns
   text (errors start with `ERROR:`; it never raises).
-- `triage/llm.py` provides `ModelClientFactory(settings).create()`: an
+- `fraud_detective/llm.py` provides `ModelClientFactory(settings).create()`: an
   `openai.OpenAI` client for OCI Generative AI or OpenAI. `Settings.load()`
   gives `settings.model_id`.
 - The bundle is extracted in the sandbox under `/workspace/bundle`.
@@ -42,13 +42,13 @@ resends the history, it only points to the previous response.
 Every function call of a response must get its `function_call_output` in the
 next call, or the API rejects the request.
 
-## What to build: `triage/agent.py`
+## What to build: `fraud_detective/agent.py`
 
 ### Constants
 
 - `DEFAULT_MAX_STEPS = 15`: maximum number of model calls that may request
   tools.
-- `TRIAGE_INSTRUCTIONS`: the instructions of the agent (see below).
+- `INVESTIGATION_INSTRUCTIONS`: the instructions of the agent (see below).
 
 ### `ToolCall` (frozen dataclass)
 
@@ -65,10 +65,10 @@ next call, or the API rejects the request.
 - `input_tokens: int`, `output_tokens: int`: summed over all calls
   (`response.usage`; count 0 when usage is missing).
 
-### `TriageAgent`
+### `InvestigationAgent`
 
 - `__init__(client, model_id: str, tools: ToolRegistry, *,
-  instructions: str = TRIAGE_INSTRUCTIONS,
+  instructions: str = INVESTIGATION_INSTRUCTIONS,
   max_steps: int = DEFAULT_MAX_STEPS,
   on_event: Callable[[str], None] | None = None)`.
 - `from_settings(settings, tools, **kwargs)` (classmethod): builds the client
@@ -86,7 +86,7 @@ next call, or the API rejects the request.
     decides. Tool errors never stop the loop: they go back to the model as
     tool output.
 
-### `TRIAGE_INSTRUCTIONS`
+### `INVESTIGATION_INSTRUCTIONS`
 
 Write them for the model, short and concrete. They must say:
 
@@ -156,6 +156,6 @@ fixture. They cover:
 ## Done
 
 Run `python -m pytest tests/unit tests/lab1 tests/lab2 -q`,
-`python -m black --check triage tests` and `python -m pylint triage`, fix
+`python -m black --check fraud_detective tests` and `python -m pylint fraud_detective`, fix
 any problem, and report what you built, the commands you ran and their
 results.

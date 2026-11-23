@@ -12,7 +12,7 @@ from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta
 from decimal import Decimal
 
-from triage.sample_case.facts import HOLIDAYS
+from fraud_detective.sample_case.facts import HOLIDAYS
 
 #: Days of the week with a payment run: Wednesday and Friday.
 RUN_WEEKDAYS = (2, 4)

@@ -23,9 +23,9 @@ Description: Finds and removes the sandboxes left over by the labs.
 
 Usage:
 
-    python -m triage.cleanup                 # list the leftover sandboxes
-    python -m triage.cleanup --delete        # remove them, after a confirmation
-    python -m triage.cleanup --delete --yes  # remove them without asking
+    python -m fraud_detective.cleanup                 # list the leftover sandboxes
+    python -m fraud_detective.cleanup --delete        # remove them, after a confirmation
+    python -m fraud_detective.cleanup --delete --yes  # remove them without asking
 """
 
 import argparse
@@ -37,9 +37,9 @@ from typing import Any, TextIO
 
 from oci.exceptions import ClientError, ServiceError
 
-from triage.config import Settings
-from triage.oci_clients import OciClients
-from triage.sandbox import (
+from fraud_detective.config import Settings
+from fraud_detective.oci_clients import OciClients
+from fraud_detective.sandbox import (
     DELETABLE_STATES,
     STOPPABLE_STATES,
     SandboxError,
@@ -191,7 +191,7 @@ class SandboxCleaner:
 def _parser() -> argparse.ArgumentParser:
     """The command line options."""
     parser = argparse.ArgumentParser(
-        prog="python -m triage.cleanup",
+        prog="python -m fraud_detective.cleanup",
         description="List and remove the sandboxes left over by the labs.",
     )
     parser.add_argument(

@@ -22,7 +22,7 @@ import time
 from collections.abc import Sequence
 from typing import TextIO
 
-from triage.preflight.base import Check, CheckResult, PreflightContext, Status
+from fraud_detective.preflight.base import Check, CheckResult, PreflightContext, Status
 
 #: Seconds between two status lines when the output is not a terminal.
 PLAIN_PROGRESS_SECONDS = 30.0

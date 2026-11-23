@@ -14,15 +14,15 @@ import random
 from datetime import date, timedelta
 from decimal import Decimal
 
-from triage.sample_case import facts
-from triage.sample_case.records import (
+from fraud_detective.sample_case import facts
+from fraud_detective.sample_case.records import (
     Invoice,
     Payment,
     add_working_days,
     next_payment_run,
     working_days,
 )
-from triage.sample_case.suppliers import MasterData
+from fraud_detective.sample_case.suppliers import MasterData
 
 #: Invoices generated for the background suppliers, before the export cut.
 BACKGROUND_INVOICES = 3010

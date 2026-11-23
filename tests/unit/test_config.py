@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pytest
 
-from triage.config import ModelProvider, OciAuth, Settings
+from fraud_detective.config import ModelProvider, OciAuth, Settings
 
 VALID_TOML = """
 [model]

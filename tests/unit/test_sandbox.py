@@ -12,8 +12,8 @@ Description: Unit tests of SandboxSession and SandboxManager against the fake
 import pytest
 
 from tests.unit.fakes import FakeSandboxClient
-from triage.sandbox import SandboxError, SandboxManager, SandboxSession
-from triage import sandbox as sandbox_module
+from fraud_detective.sandbox import SandboxError, SandboxManager, SandboxSession
+from fraud_detective import sandbox as sandbox_module
 
 
 @pytest.fixture(name="client")

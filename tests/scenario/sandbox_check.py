@@ -26,11 +26,11 @@ import zipfile
 from pathlib import Path
 
 from tests.scenario import reference_solver
-from triage.config import Settings
-from triage.ingest import BUNDLE_DIR, BundleUploader
-from triage.oci_clients import OciClients
-from triage.sample_case.case import SampleCase
-from triage.sandbox import SandboxManager
+from fraud_detective.config import Settings
+from fraud_detective.ingest import BUNDLE_DIR, BundleUploader
+from fraud_detective.oci_clients import OciClients
+from fraud_detective.sample_case.case import SampleCase
+from fraud_detective.sandbox import SandboxManager
 
 #: Where the solver and a copy of the zip go in the sandbox.
 WORK_DIR = "/workspace/check"

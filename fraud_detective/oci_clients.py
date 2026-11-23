@@ -26,7 +26,7 @@ import oci
 from oci.generative_ai import GenerativeAiClient
 from oci.generative_ai_sandbox import GenerativeAiSandboxClient
 
-from triage.config import OciAuth, Settings
+from fraud_detective.config import OciAuth, Settings
 
 #: Seconds to wait for a connection to the OCI endpoints.
 CONNECT_TIMEOUT_SECONDS = 10

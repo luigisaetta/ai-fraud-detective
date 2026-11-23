@@ -19,9 +19,9 @@ from functools import cached_property
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from triage.config import Settings
-    from triage.oci_clients import OciClients
-    from triage.sandbox import SandboxManager, SandboxSession
+    from fraud_detective.config import Settings
+    from fraud_detective.oci_clients import OciClients
+    from fraud_detective.sandbox import SandboxManager, SandboxSession
 
 
 class Status(str, Enum):
@@ -98,7 +98,7 @@ class PreflightContext:
     @cached_property
     def clients(self) -> "OciClients":
         """The OCI SDK clients, built on first use."""
-        from triage.oci_clients import (  # pylint: disable=import-outside-toplevel
+        from fraud_detective.oci_clients import (  # pylint: disable=import-outside-toplevel
             OciClients,
         )
 
@@ -107,7 +107,7 @@ class PreflightContext:
     @cached_property
     def manager(self) -> "SandboxManager":
         """The sandbox manager for the configured project."""
-        from triage.sandbox import (  # pylint: disable=import-outside-toplevel
+        from fraud_detective.sandbox import (  # pylint: disable=import-outside-toplevel
             SandboxManager,
         )
 

@@ -15,10 +15,10 @@ from typing import Any, Self
 
 from openai import OpenAI
 
-from triage.agent import AgentResult
-from triage.config import Settings
-from triage.llm import ModelClientFactory
-from triage.tools import ToolRegistry
+from fraud_detective.agent import AgentResult
+from fraud_detective.config import Settings
+from fraud_detective.llm import ModelClientFactory
+from fraud_detective.tools import ToolRegistry
 
 
 def _object_schema(**properties: dict) -> dict:

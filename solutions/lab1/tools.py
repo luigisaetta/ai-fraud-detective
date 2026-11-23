@@ -13,7 +13,7 @@ import re
 import shlex
 import uuid
 
-from triage.sandbox import CommandResult, SandboxSession
+from fraud_detective.sandbox import CommandResult, SandboxSession
 
 BUNDLE_DIR = "/workspace/bundle"
 SCRATCH_DIR = "/workspace/scratch"

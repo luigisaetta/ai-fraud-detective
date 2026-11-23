@@ -16,11 +16,11 @@ import zipfile
 from dataclasses import dataclass
 from functools import cached_property
 
-from triage.sample_case import documents, facts
-from triage.sample_case.ledger import LedgerBuilder
-from triage.sample_case.people import PeopleBuilder
-from triage.sample_case.records import Invoice, Payment
-from triage.sample_case.suppliers import MasterData, SupplierBuilder
+from fraud_detective.sample_case import documents, facts
+from fraud_detective.sample_case.ledger import LedgerBuilder
+from fraud_detective.sample_case.people import PeopleBuilder
+from fraud_detective.sample_case.records import Invoice, Payment
+from fraud_detective.sample_case.suppliers import MasterData, SupplierBuilder
 
 #: Fixed timestamp of the zip entries (the end of the extraction run).
 ZIP_TIMESTAMP = (2026, 9, 30, 19, 2, 40)
