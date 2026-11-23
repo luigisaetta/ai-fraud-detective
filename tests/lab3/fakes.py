@@ -1,6 +1,6 @@
 """
 Author: L. Saetta
-Date Last Modified: 2026-11-20
+Date Last Modified: 2026-11-23
 License: MIT
 Description: Inert model responses, snapshot support and configuration for Lab 3 tests.
 """
@@ -111,20 +111,36 @@ def report_data() -> dict:
         JSON-compatible report fields, without local verification metadata.
     """
     return {
-        "summary": "New connections fail.",
-        "root_cause": "The database process limit was reached.",
-        "confidence": "high",
-        "evidence": [
-            {"location": "db/alert_orcl.log:2", "observation": "ORA-00020 reported."}
+        "summary": "Payments to a supplier were redirected to an employee.",
+        "overall_risk": "high",
+        "total_exposure_eur": 19205.5,
+        "findings": [
+            {
+                "title": "Supplier bank account changed to an employee IBAN",
+                "scheme": "supplier_bank_change",
+                "severity": "high",
+                "amount_at_risk_eur": 19205.5,
+                "confidence": "high",
+                "description": "Two invoices just under the limit, self-approved.",
+                "evidence": [
+                    {
+                        "location": "ap/invoices.csv:2",
+                        "observation": "NB-1 entered and approved by MFERRI.",
+                    }
+                ],
+            }
+        ],
+        "cleared_items": [
+            {"item": "Monthly rent of 18,500 EUR", "reason": "Lease agreement PO."}
         ],
         "timeline": [
             {
-                "time": "10:01",
-                "event": "Connections rejected.",
-                "evidence": "db/alert_orcl.log:2",
+                "time": "2026-08-05",
+                "event": "First invoice under the limit.",
+                "evidence": "ap/invoices.csv:2",
             }
         ],
-        "next_steps": ["Review process limits and connection pool sizing."],
+        "next_steps": ["Stop the scheduled payment."],
     }
 
 
@@ -139,7 +155,7 @@ def investigation_script() -> list[SimpleNamespace]:
         name="read_file",
         call_id="call-read",
         arguments=json.dumps(
-            {"path": "db/alert_orcl.log", "start_line": 2, "end_line": 2}
+            {"path": "ap/invoices.csv", "start_line": 2, "end_line": 2}
         ),
     )
     return [
@@ -150,7 +166,7 @@ def investigation_script() -> list[SimpleNamespace]:
         ),
         response(
             "investigation-2",
-            message("Limit reached (db/alert_orcl.log:2)."),
+            message("Self-approved invoice (ap/invoices.csv:2)."),
             usage=SimpleNamespace(input_tokens=20, output_tokens=6),
         ),
         response("report-1", message(json.dumps(report_data()))),

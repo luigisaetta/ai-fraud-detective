@@ -1,6 +1,6 @@
 """
 Author: L. Saetta
-Date Last Modified: 2026-11-20
+Date Last Modified: 2026-11-23
 License: MIT
 Description: Runs the preflight checks in order and prints a report.
 
@@ -72,7 +72,7 @@ class ConsoleReporter:
         mode = "QUICK MODE" if quick else "FULL MODE"
         scope = "No sandbox created" if quick else "Includes sandbox validation"
         content = [
-            "SUPPORT BUNDLE TRIAGE AGENT",
+            "AI FRAUD DETECTIVE",
             "Oracle LiveLabs · Environment preflight",
             "",
             f"{mode} · {self._total} checks · {scope}",

@@ -1,22 +1,31 @@
 """
 Author: L. Saetta
-Date Last Modified: 2026-11-20
+Date Last Modified: 2026-11-23
 License: MIT
 Description: Unit tests of the bundle checks and of the upload to the fake
     sandbox: valid bundles are extracted under /workspace/bundle, dangerous
-    ones are rejected before anything is uploaded.
+    ones are rejected before anything is uploaded, and the reference hash is
+    checked locally and in the sandbox.
 """
 
 # pylint: disable=missing-function-docstring
 
+import hashlib
 import stat
 import zipfile
+from unittest.mock import patch
 
 import pytest
 
 from tests.unit.fakes import FakeSandboxClient
 from triage import ingest
-from triage.ingest import BundleError, BundleInspector, BundleUploader
+from triage.ingest import (
+    BundleError,
+    BundleInspector,
+    BundleUploader,
+    reference_hash,
+    verify_hash,
+)
 from triage.sandbox import SandboxSession
 
 
@@ -98,3 +107,56 @@ def test_a_rejected_bundle_is_not_uploaded(tmp_path, client, session):
     with pytest.raises(BundleError):
         BundleUploader(session).upload(_zip(tmp_path / "b.zip", {"../x": "1"}))
     assert "run" not in client.calls
+
+
+def _sha(path):
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def test_reference_hash_reads_the_sha256_file(tmp_path):
+    bundle = _zip(tmp_path / "case.zip", {"a.csv": "x\n"})
+    with pytest.raises(BundleError, match="reference hash not found"):
+        reference_hash(bundle)
+    (tmp_path / "case.sha256").write_text("not-a-hash  case.zip\n")
+    with pytest.raises(BundleError, match="does not contain a SHA-256"):
+        reference_hash(bundle)
+    (tmp_path / "case.sha256").write_text(f"{_sha(bundle).upper()}  case.zip\n")
+    assert reference_hash(bundle) == _sha(bundle)
+
+
+def test_verify_hash_rejects_a_changed_bundle(tmp_path):
+    bundle = _zip(tmp_path / "case.zip", {"a.csv": "x\n"})
+    expected = _sha(bundle)
+    assert verify_hash(bundle, expected) == expected
+    with pytest.raises(BundleError, match="does not match the reference hash"):
+        verify_hash(bundle, "0" * 64)
+    with pytest.raises(BundleError, match="64 hex digits"):
+        verify_hash(bundle, "abc")
+
+
+def test_upload_checks_the_hash_locally_and_in_the_sandbox(tmp_path, client, session):
+    bundle = _zip(tmp_path / "case.zip", {"ap/invoices.csv": "id\n1\n"})
+    summary = BundleUploader(session).upload(bundle, expected_sha256=_sha(bundle))
+    assert summary.sha256 == _sha(bundle) and summary.verified_in_sandbox
+    assert (client.workspace / "bundle/ap/invoices.csv").exists()
+
+
+def test_a_changed_bundle_is_never_uploaded(tmp_path, client, session):
+    bundle = _zip(tmp_path / "case.zip", {"ap/invoices.csv": "id\n1\n"})
+    with patch.object(session, "write_file") as write:
+        with pytest.raises(BundleError, match="reference hash"):
+            BundleUploader(session).upload(bundle, expected_sha256="1" * 64)
+    write.assert_not_called()
+
+
+def test_a_copy_changed_in_transit_is_not_extracted(tmp_path, client, session):
+    bundle = _zip(tmp_path / "case.zip", {"ap/invoices.csv": "id\n1\n"})
+    original = session.write_file
+
+    def corrupt(path, data):
+        original(path, data + b"tampered")
+
+    with patch.object(session, "write_file", side_effect=corrupt):
+        with pytest.raises(BundleError, match="copy uploaded to the sandbox"):
+            BundleUploader(session).upload(bundle, expected_sha256=_sha(bundle))
+    assert not (client.workspace / "bundle/ap/invoices.csv").exists()

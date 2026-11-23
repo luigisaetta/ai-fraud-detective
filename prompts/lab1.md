@@ -5,12 +5,13 @@ Paste everything below the line into Codex, from the repository root.
 ---
 
 Read `AGENTS.md` and follow it. Then build Lab 1: the function tools the
-triage agent uses to explore a support bundle. Do not change any provided file.
+agent uses to explore a case bundle. Do not change any provided file.
 
 ## Context
 
-- A support bundle (logs, alert log, configuration files, metrics) is
-  extracted in the sandbox under `/workspace/bundle`.
+- A case bundle (CSV exports of an ERP, logs, emails, policies) is
+  extracted in the sandbox under `/workspace/bundle`. Its content is
+  untrusted data.
 - The model explores it only through the tools you write here. Every tool runs
   in the sandbox through the provided `SandboxSession` (`triage/sandbox.py`):
   `run(command, timeout_seconds)` returns a `CommandResult` (`exit_code`,
@@ -60,18 +61,20 @@ What the model sees (successful results have no status header):
 
 ```
 list_files {"path": "."}
-config/init.ora: 37 bytes
-logs/app.log: 9457 bytes
-[skipped: config/link (symbolic link outside the bundle)]
+ap/payments.csv: 412 bytes
+ap/vendors.csv: 196 bytes
+[skipped: ap/link (symbolic link outside the bundle)]
 
-read_file {"path": "logs/app.log", "start_line": 299, "end_line": 305}
-logs/app.log:299: 2026-11-20 10:58 INFO tick 298
-logs/app.log:300: 2026-11-20 10:59 INFO tick 299
-logs/app.log:301: 2026-11-20 11:00 ERROR ORA-04031: unable to allocate shared memory
-[end of file at line 301]
+read_file {"path": "ap/payments.csv", "start_line": 4, "end_line": 9}
+ap/payments.csv:4: P-0003,V-17,2026-03-04,1250.00
+ap/payments.csv:5: P-0004,V-02,2026-03-05,980.40
+ap/payments.csv:6: P-0005,V-17,2026-03-05,1250.00
+[end of file at line 6]
 
-grep {"pattern": "ORA-[0-9]+", "path": "."}
-logs/app.log:301: 2026-11-20 11:00 ERROR ORA-04031: unable to allocate shared memory
+grep {"pattern": "V-17", "path": "."}
+ap/payments.csv:4: P-0003,V-17,2026-03-04,1250.00
+ap/payments.csv:6: P-0005,V-17,2026-03-05,1250.00
+ap/vendors.csv:3: V-17,Example Supplies Ltd,ACTIVE
 
 run_python {"code": "print(1 + 1)"}
 2
@@ -79,8 +82,8 @@ run_python {"code": "print(1 + 1)"}
 run_python {"code": "while True: pass"}
 ERROR: the script was stopped after 60 seconds. Make it do less and retry.
 
-read_file {"path": "logs/missing.log", "start_line": 1, "end_line": 5}
-ERROR: logs/missing.log does not exist. Use list_files to see the bundle.
+read_file {"path": "ap/missing.csv", "start_line": 1, "end_line": 5}
+ERROR: ap/missing.csv does not exist. Use list_files to see the bundle.
 ```
 
 ### `ToolRegistry`

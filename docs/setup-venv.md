@@ -29,14 +29,14 @@ settings in more detail.
 Clone the repository. Skip this command if you already have a checkout:
 
 ```bash
-git clone https://github.com/<your-github-owner>/support-bundle-triage-agent.git
+git clone https://github.com/<your-github-owner>/ai-fraud-detective.git
 ```
 
 Enter the repository directory, or open your existing checkout. Run all
 subsequent setup commands from this directory:
 
 ```bash
-cd support-bundle-triage-agent
+cd ai-fraud-detective
 ```
 
 ## 2. Check the Python interpreter
@@ -121,7 +121,7 @@ single command. The backslashes continue it across lines:
 ```bash
 oci generative-ai generative-ai-project create \
   --compartment-id YOUR_COMPARTMENT_OCID \
-  --display-name support-triage \
+  --display-name fraud-detective \
   --conversation-config file://config/project-conversation.json \
   --short-term-memory-optimization-config file://config/project-short-term-memory.json \
   --sandbox-config file://config/sandbox-project-deny-all.json
@@ -210,11 +210,11 @@ finished agent after Lab 3.
 
 ## Return to the workshop in a new terminal
 
-First, enter your checkout. Replace `/path/to/support-bundle-triage-agent`
+First, enter your checkout. Replace `/path/to/ai-fraud-detective`
 with its actual location on your machine:
 
 ```bash
-cd /path/to/support-bundle-triage-agent
+cd /path/to/ai-fraud-detective
 ```
 
 Activate the existing environment again:

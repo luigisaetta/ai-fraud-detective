@@ -6,7 +6,7 @@
 
 ## Goal
 
-The triage agent never runs code on your machine and never sees the whole
+The agent never runs code on your machine and never sees the whole
 bundle at once. It explores the bundle by calling a few small **function
 tools**, and every tool runs inside the OCI Sandbox. In this lab you build
 those tools:
@@ -19,14 +19,19 @@ those tools:
 | `run_python` | the output of a short analysis script |
 
 Every result that points into the bundle uses the format `path:line: text`.
-In Lab 3 the triage report cites its evidence in the same format.
+In Lab 3 the forensic report cites its evidence in the same format: for a
+CSV file, line 1 is the header and line *n* is data row *n − 1*.
 
 ## Why it matters
 
-- **Isolation.** A support bundle comes from a customer system: it is
+- **Isolation.** The bundle holds financial and personal data, and text
+  written by suppliers and by the person under investigation: it is
   untrusted data. Commands on it run in the sandbox, not on your laptop, and
-  the sandbox has no outbound network.
-- **Bounded output.** A log can be gigabytes; the model context cannot.
+  the sandbox has no outbound network, so the data cannot leave it.
+- **Bounded output.** An export can have millions of rows; the model context
+  cannot. Each tool returns at most a few thousand characters, and says what
+  it cut. This is why the model writes Python to aggregate the data instead
+  of reading it.
   Each tool returns at most a few thousand characters, and says what it cut.
 - **Errors the model can use.** A tool never crashes the agent: a wrong path
   or a timeout comes back as a short `ERROR:` message that tells the model how
@@ -101,11 +106,11 @@ from triage.sandbox import SandboxSession
 from triage.tools import ToolRegistry
 
 session = SandboxSession(FakeSandboxClient(Path(tempfile.mkdtemp())), "sbx-fake")
-session.write_file("/workspace/bundle/logs/app.log", "start\nORA-04031 shared pool\nend\n")
+session.write_file("/workspace/bundle/ap/payments.csv", "id,vendor,amount\nP-1,V-17,1250.00\n")
 tools = ToolRegistry(session)
 
 print(tools.call("list_files", {"path": "."}))
-print(tools.call("grep", '{"pattern": "ORA-[0-9]+", "path": "."}'))
+print(tools.call("grep", '{"pattern": "V-[0-9]+", "path": "."}'))
 print(tools.call("read_file", {"path": "../../etc/passwd", "start_line": 1, "end_line": 3}))
 ```
 

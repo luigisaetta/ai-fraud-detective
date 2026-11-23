@@ -2,7 +2,7 @@
 Author: L. Saetta
 Date Last Modified: 2026-11-20
 License: MIT
-Description: Safe, bounded function tools for exploring support bundles in a sandbox.
+Description: Safe, bounded function tools for exploring case bundles in a sandbox.
 """
 
 from abc import ABC, abstractmethod

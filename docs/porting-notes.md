@@ -1,5 +1,21 @@
 # Porting to AI Fraud Detective
 
+## Status (2026-11-23)
+
+- Phase 0, scenario design: done ([scenario-design.md](scenario-design.md)).
+- Phase 1, sample case generator: done (`triage/sample_case/`,
+  `triage/make_bundle.py`, `tests/scenario/`).
+- Phase 2, agent and report: done. Lab prompts, guides, tests and reference
+  solutions describe the forensic review; `triage/ingest.py` checks the
+  reference hash locally and in the sandbox; the CLI has an Integrity step;
+  the report has several findings with amounts in EUR.
+- Still to do: phase 3 (real-model runs, [tested-llms.md](tested-llms.md)),
+  phase 4 (rename the `triage` package and the `Triage*` classes, new
+  illustration), phase 5 (dry run).
+
+The inventory below is the starting point written when the repository was
+copied; most of its "to adapt" items are now done.
+
 This is a copy of the Support Bundle Triage Agent workshop, not a scenario
 redesign. The `triage` package name, interfaces, provided modules, tests,
 reference solutions, and teaching sequence are retained. Participant modules

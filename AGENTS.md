@@ -9,12 +9,15 @@ Instructions for coding agents (Codex) working in this repository.
 
 ## Project
 
-The Support Bundle Triage Agent diagnoses customer support bundles (logs,
-alert log, configuration files, metrics). It uses a model reached through the
-OpenAI Responses API, on OCI Generative AI or on OpenAI. The model does not run
-code itself: it calls function tools, and every command those tools run is
-executed inside an isolated OCI Sandbox. The output is a triage report with
-root cause, evidence (`file:line`), timeline, confidence and next steps.
+The AI Fraud Detective reviews a case bundle of accounts payable data (ERP
+exports in CSV, a change log, emails, the control policy, the case files) for
+fraud and errors. The bundle is checked against a reference SHA-256 before
+the analysis. It uses a model reached through the OpenAI Responses API, on OCI
+Generative AI or on OpenAI. The model does not run code itself: it calls
+function tools, and every command those tools run is executed inside an
+isolated OCI Sandbox. The output is a forensic report with findings (each with
+scheme, severity, amount at risk in EUR, confidence and evidence as
+`file:line`), cleared anomalies, timeline and next steps.
 
 This is a LiveLabs workshop. In each lab the participant asks you to build one
 module. The other modules are provided and must be used as they are.
@@ -30,16 +33,18 @@ triage/
   oci_clients.py         OCI SDK clients                              (provided)
   llm.py                 OpenAI client for the configured provider    (provided)
   sandbox.py             SandboxManager, SandboxSession, CommandResult (provided)
-  ingest.py              safe upload of a bundle zip into the sandbox (provided)
-  make_bundle.py         writes the sample bundle                    (provided)
+  ingest.py              hash check and safe upload of a bundle zip   (provided)
+  make_bundle.py         writes the sample case bundle and its hash   (provided)
+  sample_case/           generator of the sample case data            (provided)
   cleanup.py             removes leftover sandboxes                  (provided)
   preflight/             environment check: python -m triage.preflight (provided)
   tools.py               function tools over a SandboxSession         (Lab 1)
   agent.py               Responses API loop with function calling     (Lab 2)
-  report.py              structured triage report                     (Lab 3)
+  report.py              structured forensic report                   (Lab 3)
   cli.py                 command line entry point                     (Lab 3)
 tests/unit/              unit tests and fakes (fakes.py)
 tests/labN/              acceptance tests of lab N
+tests/scenario/          tests of the sample case and reference solver
 docs/  labs/  bundles/   design notes, lab guides, sample bundles
 prompts/                 the prompt of each lab (labN.md)
 solutions/               reference solutions, for humans only: do not read (see below)
@@ -52,9 +57,10 @@ solutions/               reference solutions, for humans only: do not read (see 
 - `AGENTS.md`.
 - The provided modules: `triage/config.py`, `triage/oci_clients.py`,
   `triage/llm.py`, `triage/sandbox.py`, `triage/ingest.py`,
-  `triage/make_bundle.py`, `triage/cleanup.py`, `triage/preflight/`, and any other file
+  `triage/make_bundle.py`, `triage/sample_case/`, `triage/cleanup.py`,
+  `triage/preflight/`, and any other file
   marked "(provided)" above.
-- Existing tests, in `tests/unit/` and `tests/labN/`. Make them pass by fixing
+- Existing tests, in `tests/unit/`, `tests/scenario/` and `tests/labN/`. Make them pass by fixing
   your code, never by editing, skipping or deleting a test.
 - `config/settings.toml`, `.env`, `.env.example`, `requirements.txt`,
   `pyproject.toml`, unless the user explicitly asks.

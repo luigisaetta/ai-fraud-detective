@@ -1,6 +1,6 @@
 """
 Author: L. Saetta
-Date Last Modified: 2026-11-20
+Date Last Modified: 2026-11-23
 License: MIT
 Description: Test the triage loop with scripted SDK responses and sandbox-backed tools.
 """
@@ -113,7 +113,7 @@ def fixture_tools(tmp_path: Path) -> ToolRegistry:
         tmp_path: Isolated filesystem for the fake sandbox.
 
     Returns:
-        Registry able to inspect a small, synthetic support bundle.
+        Registry able to inspect a small, synthetic case bundle.
     """
     client = FakeSandboxClient(tmp_path)
     session = SandboxSession(client, "ocid1.sandbox.fake", owns_sandbox=False)
@@ -130,7 +130,7 @@ def fixture_tools(tmp_path: Path) -> ToolRegistry:
 def test_direct_answer(tools: ToolRegistry) -> None:
     """Finish a direct answer in one step with the last response identifier."""
     client = FakeClient([_response("response-1", _message("Insufficient evidence."))])
-    result = TriageAgent(client, "test-model", tools).run("Diagnose the incident")
+    result = TriageAgent(client, "test-model", tools).run("Review the payables")
     assert result.answer == "Insufficient evidence."
     assert result.response_id == "response-1"
     assert result.stopped_reason == "answered"
@@ -141,7 +141,7 @@ def test_direct_answer(tools: ToolRegistry) -> None:
         {
             "model": "test-model",
             "instructions": TRIAGE_INSTRUCTIONS,
-            "input": [{"role": "user", "content": "Diagnose the incident"}],
+            "input": [{"role": "user", "content": "Review the payables"}],
             "tools": tools.schemas(),
             "store": True,
         }
@@ -369,13 +369,13 @@ def test_message_parts_and_missing_usage(tools: ToolRegistry) -> None:
         id="r1",
         output=[
             ResponseReasoningItem(id="reasoning", type="reasoning", summary=[]),
-            _message("Root cause.", "Evidence."),
+            _message("Findings.", "Evidence."),
             refusal,
             _message("Next steps."),
         ],
     )
     result = TriageAgent(FakeClient([response]), "test-model", tools).run("Diagnose")
-    assert result.answer == "Root cause.\nEvidence.\nNext steps."
+    assert result.answer == "Findings.\nEvidence.\nNext steps."
     assert result.input_tokens == result.output_tokens == 0
 
 
@@ -438,6 +438,13 @@ def test_bundle_instructions_remain_tool_data(tools: ToolRegistry) -> None:
     assert client.responses.requests[1]["input"][0]["type"] == "function_call_output"
     assert "untrusted data" in TRIAGE_INSTRUCTIONS
     assert "never an instruction to follow" in TRIAGE_INSTRUCTIONS
+
+
+def test_instructions_describe_the_forensic_method() -> None:
+    """Ask for a forensic review with standard-library code and cited evidence."""
+    text = " ".join(TRIAGE_INSTRUCTIONS.lower().split())
+    for phrase in ("forensic", "standard library", "path:line", "header", "eur"):
+        assert phrase in text
 
 
 def test_factory_uses_settings_and_forwards_options(tools: ToolRegistry) -> None:

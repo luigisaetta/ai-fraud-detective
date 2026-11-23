@@ -1,13 +1,14 @@
 """
 Author: L. Saetta
-Date Last Modified: 2026-11-21
+Date Last Modified: 2026-11-23
 License: MIT
-Description: Run sandbox investigations, save reports and manage resource cleanup.
+Description: Verify a case bundle, run the investigation in a sandbox, save the
+    forensic report and manage resource cleanup.
 """
 
 import argparse
 from contextlib import closing
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime, timezone
 import json
 import os
@@ -23,20 +24,26 @@ from openai import APIError, OpenAI
 
 from triage.agent import DEFAULT_MAX_STEPS, AgentResult, TriageAgent
 from triage.config import Settings
-from triage.ingest import BundleError, BundleUploader
+from triage.ingest import BundleError, BundleUploader, reference_hash, verify_hash
 from triage.llm import ModelClientFactory
 from triage.oci_clients import OciClients
 from triage.report import (
+    REVIEW_NOTE,
     EvidenceChecker,
+    FraudReport,
     ReportError,
     ReportWriter,
-    TriageReport,
+    money,
     render_markdown,
 )
 from triage.sandbox import SandboxError, SandboxManager, SandboxSession
 from triage.tools import ToolRegistry
 
-DEFAULT_TASK = "Find the root cause of the issue described in the support bundle."
+DEFAULT_TASK = (
+    "Review the accounts payable in the bundle: find payments that may be "
+    "fraudulent or wrong, explain why, quantify the exposure in EUR and cite the "
+    "evidence."
+)
 DEFAULT_OUTPUT_DIR = Path("out")
 PROGRESS_INTERVAL_SECONDS = 30.0
 BOX_WIDTH = 64
@@ -100,7 +107,7 @@ class _Progress:
 
 
 class ConsoleView:
-    """Draw the banner, the steps and the result panel of a triage run.
+    """Draw the banner, the steps and the result panel of an investigation.
 
     Colors are used only on a terminal, and never when NO_COLOR is set, so
     redirected output stays plain text.
@@ -130,8 +137,8 @@ class ConsoleView:
             max_steps: Step budget of the agent.
         """
         rows = [
-            self._row("SUPPORT BUNDLE TRIAGE AGENT"),
-            self._row("Oracle LiveLabs · Triage run"),
+            self._row("AI FRAUD DETECTIVE"),
+            self._row("Oracle LiveLabs · Forensic review"),
             self._row(""),
             self._row(f"Bundle  {bundle.name}"),
             self._row(f"Model   {model_id} · max {max_steps} steps"),
@@ -144,7 +151,7 @@ class ConsoleView:
         """Print the header of a numbered step.
 
         Args:
-            number: Step number, from 1 to 5.
+            number: Step number, from 1 to 6.
             title: Short step name.
         """
         self._write(self._paint(f"▸ {number}. {title}", self.CYAN))
@@ -173,35 +180,46 @@ class ConsoleView:
         """Return a progress callback for a long sandbox operation."""
         return _Progress(self._stream)
 
-    def result(self, report: TriageReport) -> None:
-        """Print the panel with summary, root cause, confidence and evidence.
+    def result(self, report: FraudReport, sha256: str) -> None:
+        """Print the panel with summary, risk, exposure, findings and evidence.
 
         Args:
             report: Checked report of the run.
+            sha256: Hash of the bundle that was analysed.
         """
         width = BOX_WIDTH - 6 - len(INDENT)
         verified = sum(item.verified is True for item in report.evidence)
-        confidence = self._paint(
-            report.confidence, self.CONFIDENCE_COLORS.get(report.confidence, "")
+        risk = self._paint(
+            report.overall_risk, self.CONFIDENCE_COLORS.get(report.overall_risk, "")
         )
-        tail = f" · Evidence verified: {verified}/{len(report.evidence)}"
+        exposure = f" · Total exposure: {money(report.total_exposure_eur)}"
         rows = [self._row("Summary:")]
         rows += [
             self._row(INDENT + line) for line in textwrap.wrap(report.summary, width)
         ]
-        rows += [self._row(""), self._row("Root cause:")]
-        rows += [
-            self._row(INDENT + line) for line in textwrap.wrap(report.root_cause, width)
-        ]
         rows += [
             self._row(""),
             self._row(
-                f"Confidence: {report.confidence}{tail}",
-                f"Confidence: {confidence}{tail}",
+                f"Overall risk: {report.overall_risk}{exposure}",
+                f"Overall risk: {risk}{exposure}",
             ),
+            self._row(""),
+            self._row(f"Findings ({len(report.findings)}):"),
+        ]
+        for number, finding in enumerate(report.findings, 1):
+            text = (
+                f"F{number} [{finding.severity}] {finding.title} · "
+                f"{money(finding.amount_at_risk_eur)}"
+            )
+            lines = textwrap.wrap(text, width, subsequent_indent="   ")
+            rows += [self._row(INDENT + line) for line in lines]
+        rows += [
+            self._row(""),
+            self._row(f"Evidence verified: {verified}/{len(report.evidence)}"),
+            self._row(f"Bundle SHA-256: {sha256[:16]}…"),
         ]
         self._write("")
-        self._box("Triage result", rows)
+        self._box("Investigation result", rows)
 
     def _row(self, text: str, painted: str | None = None) -> tuple[str, str]:
         """Fit a row to the box, cutting it with an ellipsis when too long.
@@ -245,6 +263,7 @@ class _RunOptions:
     snapshot: bool
     max_steps: int
     task: str
+    expected_sha256: str | None
 
 
 class TriageApp:
@@ -281,8 +300,9 @@ class TriageApp:
         snapshot: bool = False,
         max_steps: int = DEFAULT_MAX_STEPS,
         task: str = DEFAULT_TASK,
+        expected_sha256: str | None = None,
     ) -> Path:
-        """Investigate a bundle and save reports, cleaning up on every exit path.
+        """Verify and investigate a bundle, save reports, clean up on every exit.
 
         Args:
             bundle: Local zip, extracted only in the sandbox.
@@ -291,12 +311,15 @@ class TriageApp:
             snapshot: Take a snapshot before cleanup, including after failures.
             max_steps: Maximum number of tool-requesting model calls.
             task: Investigation request sent to the agent.
+            expected_sha256: Reference hash of the bundle; by default it is read
+                from the .sha256 file next to the bundle.
 
         Returns:
             Markdown report path, even if sandbox closure needs manual completion.
 
         Raises:
-            BundleError: The bundle is missing, unsafe or cannot be extracted.
+            BundleError: The bundle is missing, unsafe, cannot be extracted, or
+                does not match its reference hash.
             SandboxError: Sandbox creation, commands or snapshot failed.
             ReportError: The model report is not valid structured JSON.
             openai.APIError: The model request failed.
@@ -314,8 +337,9 @@ class TriageApp:
             if not valid_budget or max_steps < 1:
                 raise ValueError("max_steps must be a positive integer")
             options = _RunOptions(
-                Path(bundle), sandbox_id, keep, snapshot, max_steps, task
-            )
+                Path(bundle), sandbox_id, keep, snapshot, max_steps, task,
+                expected_sha256,
+            )  # fmt: skip
             return self._run(options)
         except _EXPECTED_ERRORS as error:
             self._view.error(_message(error))
@@ -325,9 +349,15 @@ class TriageApp:
             raise
 
     def _run(self, options: _RunOptions) -> Path:
-        """Acquire a session and preserve any original error during cleanup."""
+        """Check integrity, acquire a session, preserve errors during cleanup."""
         view = self._view
-        view.step(1, "Sandbox")
+        view.step(1, "Integrity")
+        view.info("Checking the bundle against the reference hash of the case file.")
+        expected = options.expected_sha256 or reference_hash(options.bundle)
+        sha256 = verify_hash(options.bundle, expected)
+        view.done(f"SHA-256 matches the reference: {sha256[:16]}…")
+        options = replace(options, expected_sha256=sha256)
+        view.step(2, "Sandbox")
         if options.sandbox_id is not None:
             view.info(f"Attaching to sandbox {options.sandbox_id}.")
             session = self._manager.attach(options.sandbox_id)
@@ -351,19 +381,22 @@ class TriageApp:
                     f"Cleanup also failed: {_message(cleanup_error)}"
                 )
                 view.warning(f"Cleanup also failed: {_message(cleanup_error)}")
-        view.result(report)
+        view.result(report, sha256)
         return path
 
     def _investigate(
         self, session: SandboxSession, options: _RunOptions
-    ) -> tuple[Path, TriageReport]:
+    ) -> tuple[Path, FraudReport]:
         """Upload, investigate, request structured findings and check citations."""
         view = self._view
-        view.step(2, "Bundle")
-        view.info("Uploading and extracting the bundle in the sandbox.")
-        summary = BundleUploader(session).upload(options.bundle)
+        view.step(3, "Bundle")
+        view.info("Uploading, verifying and extracting the bundle in the sandbox.")
+        summary = BundleUploader(session).upload(
+            options.bundle, expected_sha256=options.expected_sha256
+        )
+        view.done("Copy in the sandbox matches the reference hash")
         view.done(summary.describe())
-        view.step(3, "Investigation")
+        view.step(4, "Investigation")
         view.info("Waiting for the model and its tools.")
         tools = ToolRegistry(session)
         agent = TriageAgent(
@@ -378,19 +411,25 @@ class TriageApp:
             f"{result.stopped_reason}: {result.steps} steps, "
             f"{len(result.tool_calls)} tool calls"
         )
-        view.step(4, "Report")
+        view.step(5, "Report")
         view.info("Requesting the structured report and checking the cited lines.")
         report = ReportWriter(self._model_client, self._settings.model_id).write(result)
         report = EvidenceChecker(tools).check(report)
-        path = self._save(report, result, session.sandbox_id, options.bundle)
+        path = self._save(report, result, session.sandbox_id, options)
         return path, report
 
     def _save(
-        self, report: TriageReport, result: AgentResult, sandbox_id: str, bundle: Path
+        self,
+        report: FraudReport,
+        result: AgentResult,
+        sandbox_id: str,
+        options: _RunOptions,
     ) -> Path:
-        """Write both artifacts, then print findings and verification totals."""
+        """Write both artifacts, then print verification totals and paths."""
+        bundle = options.bundle
         metadata = {
             "bundle": bundle.name,
+            "bundle_sha256": str(options.expected_sha256),
             "date": datetime.now(timezone.utc).isoformat(timespec="seconds"),
             "model": self._settings.model_id,
             "sandbox": sandbox_id,
@@ -405,8 +444,13 @@ class TriageApp:
         markdown_path = self._output_dir / f"{bundle.stem}-report.md"
         json_path = self._output_dir / f"{bundle.stem}-report.json"
         markdown_path.write_text(render_markdown(report, metadata), encoding="utf-8")
+        document = {
+            "bundle_sha256": options.expected_sha256,
+            "review_note": REVIEW_NOTE,
+            **report.to_dict(),
+        }
         json_path.write_text(
-            json.dumps(report.to_dict(), indent=2, ensure_ascii=False) + "\n",
+            json.dumps(document, indent=2, ensure_ascii=False) + "\n",
             encoding="utf-8",
         )
         verified = sum(item.verified is True for item in report.evidence)
@@ -420,7 +464,7 @@ class TriageApp:
     def _cleanup(self, session: SandboxSession, options: _RunOptions) -> None:
         """Snapshot if requested, then respect session ownership and keep policy."""
         view = self._view
-        view.step(5, "Cleanup")
+        view.step(6, "Cleanup")
         try:
             if options.snapshot:
                 view.info("Taking a snapshot: waiting for it to become active.")
@@ -463,7 +507,7 @@ def _positive_int(value: str) -> int:
 def _parser() -> argparse.ArgumentParser:
     """Describe the workshop's supported CLI options."""
     parser = argparse.ArgumentParser(
-        description="Triage a support bundle in an OCI Sandbox."
+        description="Investigate a case bundle in an OCI Sandbox."
     )
     parser.add_argument("bundle", type=Path, metavar="BUNDLE")
     parser.add_argument("--sandbox-id", metavar="ID")
@@ -472,6 +516,11 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--max-steps", type=_positive_int, default=DEFAULT_MAX_STEPS)
     parser.add_argument("--task", default=DEFAULT_TASK)
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
+    parser.add_argument(
+        "--expected-sha256",
+        metavar="HEX",
+        help="reference hash of the bundle (default: the .sha256 file next to it)",
+    )
     return parser
 
 
@@ -509,6 +558,7 @@ def main() -> int:
             snapshot=arguments.snapshot,
             max_steps=arguments.max_steps,
             task=arguments.task,
+            expected_sha256=arguments.expected_sha256,
         )
     except _EXPECTED_ERRORS:
         return 1  # TriageApp has already printed the error once.

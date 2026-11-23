@@ -62,8 +62,8 @@ run and tells you what to fix.
 From the repository root:
 
 ```bash
-conda create -n support-bundle-triage-agent python=3.12 -y
-conda activate support-bundle-triage-agent
+conda create -n ai-fraud-detective python=3.12 -y
+conda activate ai-fraud-detective
 pip install -r requirements.txt -r requirements-dev.txt
 ```
 
@@ -81,7 +81,7 @@ The project settings are in `config/`:
 ```bash
 oci generative-ai generative-ai-project create \
   --compartment-id <compartment-ocid> \
-  --display-name support-triage \
+  --display-name fraud-detective \
   --conversation-config file://config/project-conversation.json \
   --short-term-memory-optimization-config file://config/project-short-term-memory.json \
   --sandbox-config file://config/sandbox-project-deny-all.json
@@ -146,7 +146,7 @@ A successful run looks like this (shortened):
 
 ```
  ✔ [ 1/11] Local environment  Python 3.12.0 (...), oci 2.192.0, openai 3.55.1, ...
- ✔ [ 4/11] Project            support-triage: ACTIVE, conversations 720 h, short-term memory (openai.gpt-oss-120b), sandboxes enabled, network MANAGED/DENY_ALL
+ ✔ [ 4/11] Project            fraud-detective: ACTIVE, conversations 720 h, short-term memory (openai.gpt-oss-120b), sandboxes enabled, network MANAGED/DENY_ALL
  ✔ [ 6/11] Model              openai.gpt-... called get_utc_time, conversation continued on the server (4.4 s)
  ✔ [ 7/11] Sandbox            RUNNING in ... s (python-3.11, SMALL)
  ✔ [ 8/11] Runtime tools      python3 grep awk sed timeout unzip curl
@@ -185,7 +185,7 @@ check that Codex followed it.
 
 | Symptom | What to do |
 |---------|------------|
-| `Local environment` fails | The wrong Python is active: `conda activate support-bundle-triage-agent`, then `pip install -r requirements.txt`. |
+| `Local environment` fails | The wrong Python is active: `conda activate ai-fraud-detective`, then `pip install -r requirements.txt`. |
 | `Configuration` fails | A key in `.env` or `config/settings.toml` is missing: the message names it. |
 | `Project` fails with 404 | Check `project_id` and `region` in `config/settings.toml`. |
 | `Network isolation` fails | The project was not created with `DENY_ALL`; create a new project (step 2). |

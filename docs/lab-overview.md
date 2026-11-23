@@ -1,6 +1,7 @@
-# Support Bundle Triage Agent — Lab Overview
+# AI Fraud Detective — Lab Overview
 
-Build an AI agent that diagnoses a customer support bundle. The model is reached
+Build an AI agent that reviews accounts payable data for fraud and errors, as
+the analyst of an external forensic firm would. The model is reached
 through the OpenAI Responses API (on OCI Generative AI or on OpenAI); every
 command the agent runs executes inside an isolated OCI Sandbox. You write the
 code with Codex, guided by `AGENTS.md`, the lab guides and acceptance tests.
@@ -63,7 +64,7 @@ OpenAI, secrets vs configuration.
 
 ## Lab 1 — Sandbox tools
 
-**Goal:** give the model safe, small tools to explore a bundle.
+**Goal:** give the model safe, small tools to explore a case bundle.
 
 **Build with Codex:** `triage/tools.py`, function tools on top of the provided
 `SandboxSession`:
@@ -95,7 +96,8 @@ returned to the model, not raised.
 
 **You learn:** function calling with Responses, server-side conversation
 (`store=True`, `previous_response_id`), several tool calls per step, step
-budgets, treating bundle content as untrusted data (prompt injection).
+budgets, instructions that carry a forensic method, treating bundle content
+as untrusted data (prompt injection).
 
 **Done when:** `pytest tests/lab2` passes; optionally, watch the agent
 investigate a small bundle with the real model.
@@ -104,29 +106,34 @@ investigate a small bundle with the real model.
 
 ## Lab 3 — Report and end-to-end run
 
-**Goal:** a triage report from the sample bundle, on a real OCI Sandbox.
+**Goal:** a forensic report from the sample case, on a real OCI Sandbox.
 
 **Before:** `python -m triage.make_bundle` writes
-`bundles/sample-ora00020.zip`, a customer case with a known root cause, red
-herrings and a line that tries to give orders to the AI assistant.
+`bundles/halden-ap-q3-2026.zip`, the extraction of nine months of accounts
+payable of a fictitious company, and `bundles/halden-ap-q3-2026.sha256`, its
+reference hash. The data hides a fraud, an honest error, legitimate
+anomalies and text that tries to give orders to the AI.
 
 **Build with Codex:**
 - `triage/report.py` — the report is one more turn of the same server-side
-  conversation, with structured output (strict JSON schema): root cause,
-  confidence, evidence as `file:line`, timeline, next steps. Each cited line
-  is read in the sandbox and marked ✔ or ✘. Rendered as Markdown.
-- `triage/cli.py` — `python -m triage.cli bundles/<bundle>.zip`: create a
-  sandbox, upload the bundle, run the agent, write the report to `out/`,
-  clean up.
+  conversation, with structured output (strict JSON schema): findings, each
+  with scheme, severity, confidence, amount at risk in EUR and evidence as
+  `file:line`; cleared anomalies; timeline; next steps. Each cited line is
+  read in the sandbox and marked ✔ or ✘. Rendered as Markdown, with a fixed
+  note that investigators verify the findings.
+- `triage/cli.py` — `python -m triage.cli bundles/<bundle>.zip`: check the
+  bundle against its reference hash, create a sandbox, upload the bundle and
+  check the copy, run the agent, write the report to `out/`, clean up.
 
-**Steps:** run the CLI on the sample bundle with `--keep` (sandbox creation
-may occasionally take longer); compare the report with the known root cause;
-run it again with `--sandbox-id` to reuse the same sandbox without waiting;
+**Steps:** run the CLI on the sample case with `--keep` (sandbox creation
+may occasionally take longer); check the findings, the amounts and the
+evidence; change the zip and see the integrity check stop the run; run it
+again with `--sandbox-id` to reuse the same sandbox without waiting;
 optionally take a snapshot with `--snapshot`.
 
-**You learn:** structured outputs, continuing a stored conversation,
-evidence-based reports, sandbox lifecycle (create, attach, snapshot,
-cleanup).
+**You learn:** chain of custody with a hash (and what it does not prove),
+structured outputs, continuing a stored conversation, evidence-based reports,
+sandbox lifecycle (create, attach, snapshot, cleanup).
 
-**Done when:** `pytest tests/lab3` passes and the report names the root
-cause of the sample bundle with verified evidence.
+**Done when:** `pytest tests/lab3` passes and the report finds the fraud of
+the sample case, with its amount and verified evidence.

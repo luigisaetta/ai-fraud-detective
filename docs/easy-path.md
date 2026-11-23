@@ -69,19 +69,20 @@ call.
 
 ## 5. Run a real investigation
 
-Create the sample bundle, then run the triage on a new sandbox:
+Create the sample case, then run the investigation on a new sandbox:
 
 ```bash
 python -m triage.make_bundle
 ```
 
 ```bash
-python -m triage.cli bundles/sample-ora00020.zip
+python -m triage.cli bundles/halden-ap-q3-2026.zip
 ```
 
-Starting a sandbox can take several minutes. The CLI shows each step, then
-a panel with the summary, the root cause, the confidence and how many cited
-lines were verified. The report is in `out/sample-ora00020-report.md`.
+Starting a sandbox can take several minutes. The CLI checks the bundle
+against its reference hash, shows each step, then a panel with the summary,
+the overall risk, the total exposure, the findings and how many cited lines
+were verified. The report is in `out/halden-ap-q3-2026-report.md`.
 [The sample bundle](sample-bundle.md) lists what a good report finds.
 
 ## 6. Clean up

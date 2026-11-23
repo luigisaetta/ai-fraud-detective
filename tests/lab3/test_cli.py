@@ -1,11 +1,13 @@
 """
 Author: L. Saetta
-Date Last Modified: 2026-11-21
+Date Last Modified: 2026-11-23
 License: MIT
-Description: Test CLI output, progress throttling and sandbox lifecycle with local fakes.
+Description: Test CLI output, the integrity check, progress throttling and
+    sandbox lifecycle with local fakes.
 """
 
 from dataclasses import dataclass, replace
+import hashlib
 import io
 import json
 from pathlib import Path
@@ -35,6 +37,20 @@ from triage.sandbox import SandboxError, SandboxManager, SandboxSession
 
 COLOR_CODE = re.compile(r"\033\[[0-9;]*m")
 BOX_CHARS = ("╭", "│", "╰")
+
+
+def write_reference(bundle: Path) -> str:
+    """Record the reference hash of a bundle next to it, as the case file does.
+
+    Args:
+        bundle: The zip file.
+
+    Returns:
+        The SHA-256 written to the .sha256 file.
+    """
+    digest = hashlib.sha256(bundle.read_bytes()).hexdigest()
+    bundle.with_suffix(".sha256").write_text(f"{digest}  {bundle.name}\n")
+    return digest
 
 
 def plain(text: str) -> str:
@@ -114,9 +130,12 @@ def fixture_harness(tmp_path: Path) -> Harness:
     bundle = tmp_path / "sample.zip"
     with zipfile.ZipFile(bundle, "w") as archive:
         archive.writestr(
-            "db/alert_orcl.log", "10:00 INFO started\n10:01 ERROR ORA-00020\n"
+            "ap/invoices.csv",
+            "invoice,supplier,amount,entered_by,approved_by\n"
+            "NB-1,S2031,9480.00,MFERRI,MFERRI\n",
         )
-        archive.writestr("config.ini", "processes=300\n")
+        archive.writestr("policy/ap_controls.md", "Nobody approves own invoices.\n")
+    write_reference(bundle)
     return Harness(
         client,
         manager,
@@ -134,37 +153,46 @@ def test_end_to_end_reports_and_cleanup(harness: Harness) -> None:
     assert path == harness.output / "sample-report.md"
     markdown = path.read_text(encoding="utf-8")
     saved = json.loads(path.with_suffix(".json").read_text(encoding="utf-8"))
-    assert saved["root_cause"] == report_data()["root_cause"]
-    assert saved["evidence"][0]["verified"] is True
+    digest = hashlib.sha256(harness.bundle.read_bytes()).hexdigest()
+    assert saved["total_exposure_eur"] == report_data()["total_exposure_eur"]
+    assert saved["findings"][0]["evidence"][0]["verified"] is True
+    assert saved["bundle_sha256"] == digest
+    assert "verify" in saved["review_note"].lower()
     assert "✔" in markdown and "| Steps | 2 |" in markdown
+    assert digest in markdown
     assert "30 input / 11 output (investigation)" in markdown
     assert harness.client.calls[0] == "create"
     assert harness.client.calls[-2:] == ["stop", "delete"]
     requests = harness.model.requests
     assert requests[1]["previous_response_id"] == "investigation-1"
     assert (
-        "db/alert_orcl.log:2: 10:01 ERROR ORA-00020"
+        "ap/invoices.csv:2: NB-1,S2031,9480.00,MFERRI,MFERRI"
         in requests[1]["input"][0]["output"]
     )
     assert requests[2]["previous_response_id"] == "investigation-2"
     assert requests[2]["text"]["format"]["strict"] is True
     assert all(request["store"] is True for request in requests)
     text = harness.stream.getvalue()
-    for step in (
-        "1. Sandbox",
-        "2. Bundle",
-        "3. Investigation",
-        "4. Report",
-        "5. Cleanup",
-    ):
-        assert step in text
+    steps = (
+        "1. Integrity",
+        "2. Sandbox",
+        "3. Bundle",
+        "4. Investigation",
+        "5. Report",
+        "6. Cleanup",
+    )
+    positions = [text.index(step) for step in steps]
+    assert positions == sorted(positions)
     for value in (
+        f"SHA-256 matches the reference: {digest[:16]}",
+        "Copy in the sandbox matches the reference hash",
         "a cold start can take minutes",
         "RUNNING",
         "2 files",
         "step 1: read_file",
-        "Root cause:",
-        "Confidence: high",
+        "Overall risk: high",
+        "Total exposure: 19,205.50 EUR",
+        "F1 [high]",
         "Evidence verified: 1/1",
         str(path),
         str(path.with_suffix(".json")),
@@ -173,21 +201,27 @@ def test_end_to_end_reports_and_cleanup(harness: Harness) -> None:
 
 
 def test_banner_and_result_panel(harness: Harness) -> None:
-    """Open with the banner and end with the summary and root cause in a panel."""
+    """Open with the banner and end with the summary and findings in a panel."""
     harness.app().run(harness.bundle)
     text = harness.stream.getvalue()
     assert "\033[" not in text  # no escape codes on a non-terminal stream
-    assert text.index("SUPPORT BUNDLE TRIAGE AGENT") < text.index("1. Sandbox")
+    assert text.index("AI FRAUD DETECTIVE") < text.index("1. Integrity")
     assert "sample.zip" in text and "test-model" in text
-    panel = text[text.index("Triage result") :]
-    assert text.index("5. Cleanup") < text.index("Triage result")
+    panel = " ".join(
+        line[1:-1].strip()
+        for line in box_lines(text[text.index("Investigation result") - 3 :])
+    )
+    panel = " ".join(panel.split())
+    assert text.index("6. Cleanup") < text.index("Investigation result")
     for value in (
         "Summary:",
         report_data()["summary"],
-        "Root cause:",
-        report_data()["root_cause"],
-        "Confidence: high",
+        "Overall risk: high",
+        "Total exposure: 19,205.50 EUR",
+        "Findings (1):",
+        "F1 [high] Supplier bank account changed to an employee IBAN",
         "Evidence verified: 1/1",
+        "Bundle SHA-256:",
     ):
         assert value in panel
     assert box_lines(text) and all(len(line) == BOX_WIDTH for line in box_lines(text))
@@ -205,7 +239,7 @@ def test_long_texts_wrap_inside_the_boxes(harness: Harness) -> None:
     text = harness.stream.getvalue()
     lines = box_lines(text)
     assert all(len(line) == BOX_WIDTH for line in lines)
-    start = next(i for i, line in enumerate(lines) if "Triage result" in line)
+    start = next(i for i, line in enumerate(lines) if "Investigation result" in line)
     panel = " ".join(lines[start:])
     assert all(f"word{index}" in panel.split() for index in range(60))
     assert "…" in text
@@ -269,19 +303,54 @@ def test_slow_close_keeps_successful_report(harness: Harness) -> None:
 def test_bad_bundle_prints_once_and_cleans_up(harness: Harness) -> None:
     """Reject bad zip data before model use, then still close the created session."""
     harness.bundle.write_text("not a zip", encoding="utf-8")
+    write_reference(harness.bundle)
     with pytest.raises(BundleError, match="not a zip"):
         harness.app().run(harness.bundle)
     assert harness.client.calls[-2:] == ["stop", "delete"]
     assert harness.model.requests == []
     assert harness.stream.getvalue().count("ERROR:") == 1
     assert "Traceback" not in harness.stream.getvalue()
-    assert "5. Cleanup" in harness.stream.getvalue()
+    assert "6. Cleanup" in harness.stream.getvalue()
+
+
+def test_missing_reference_hash_stops_before_the_sandbox(harness: Harness) -> None:
+    """Refuse a bundle without its reference hash, before allocating anything."""
+    harness.bundle.with_suffix(".sha256").unlink()
+    with pytest.raises(BundleError, match="reference hash not found"):
+        harness.app().run(harness.bundle)
+    assert harness.client.calls == [] and harness.model.requests == []
+    assert harness.stream.getvalue().count("ERROR:") == 1
+    assert "2. Sandbox" not in harness.stream.getvalue()
+
+
+def test_changed_bundle_stops_before_the_sandbox(harness: Harness) -> None:
+    """Refuse a bundle changed after the extraction, before allocating anything."""
+    with zipfile.ZipFile(harness.bundle, "a") as archive:
+        archive.writestr("ap/extra.csv", "added later\n")
+    with pytest.raises(BundleError, match="does not match the reference hash"):
+        harness.app().run(harness.bundle)
+    assert harness.client.calls == [] and harness.model.requests == []
+    assert harness.stream.getvalue().count("ERROR:") == 1
+
+
+def test_expected_sha256_option_replaces_the_file(harness: Harness) -> None:
+    """Accept the reference hash on the command line instead of the .sha256 file."""
+    digest = hashlib.sha256(harness.bundle.read_bytes()).hexdigest()
+    harness.bundle.with_suffix(".sha256").unlink()
+    status = _main(
+        harness,
+        ["--output-dir", str(harness.output), "--expected-sha256", digest.upper()],
+    )
+    assert status == 0
+    assert (harness.output / "sample-report.md").is_file()
+    assert _main(harness, ["--expected-sha256", "0" * 64]) == 1
 
 
 @pytest.mark.parametrize("attached", [False, True])
 def test_bundle_failure_respects_ownership(harness: Harness, attached: bool) -> None:
     """Preserve the selected sandbox after failure when attached or explicitly kept."""
     harness.bundle.write_text("bad zip", encoding="utf-8")
+    write_reference(harness.bundle)
     with patch.object(SandboxSession, "close", autospec=True) as close:
         with pytest.raises(BundleError):
             harness.app().run(
@@ -329,6 +398,7 @@ def test_model_failure_and_ctrl_c_cleanup(harness: Harness, failure: str) -> Non
 def test_slow_close_does_not_hide_original_error(harness: Harness) -> None:
     """Keep an investigation failure as a failure when cleanup also needs attention."""
     harness.bundle.write_text("bad zip", encoding="utf-8")
+    write_reference(harness.bundle)
     with patch.object(
         SandboxSession, "close", side_effect=SandboxError("still STOPPING")
     ):
@@ -512,6 +582,7 @@ def test_main_invalid_settings_exit_one(harness: Harness) -> None:
 def test_main_bad_bundle_exit_one(harness: Harness) -> None:
     """Print one expected error and return one after cleaning up the sandbox."""
     harness.bundle.write_text("bad zip", encoding="utf-8")
+    write_reference(harness.bundle)
     assert _main(harness, []) == 1
     assert harness.stream.getvalue().count("ERROR:") == 1
     assert harness.client.calls[-2:] == ["stop", "delete"]

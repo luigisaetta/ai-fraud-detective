@@ -21,14 +21,14 @@ triage/
   oci_clients.py                   OCI SDK clients (provided)
   llm.py                           configured model client (provided)
   sandbox.py                       sandbox lifecycle, commands and files (provided)
-  ingest.py                        safe bundle upload and extraction (provided)
+  ingest.py                        bundle hash check, safe upload and extraction (provided)
   make_bundle.py                   writes the sample case bundle and its hash (provided)
   sample_case/                     generator of the sample case data (provided)
   cleanup.py                       leftover sandbox removal (provided)
   preflight/                       environment and OCI checks (provided)
   tools.py                         sandbox function tools (Lab 1)
   agent.py                         Responses API investigation loop (Lab 2)
-  report.py                        structured report and evidence checks (Lab 3)
+  report.py                        structured forensic report and evidence checks (Lab 3)
   cli.py                           command line for a complete investigation (Lab 3)
 labs/                              participant guides: lab0.md through lab3.md
 prompts/                           the Codex prompt for each lab
