@@ -135,11 +135,28 @@ match a real account.
 | Duplicate payment | grouping by supplier and amount, with near-identical invoice numbers |
 | Self-approval | comparing `entered_by` and `approved_by`, then the user roles |
 
-The sandbox runtime may not have pandas, so the instructions tell the agent
-to use the Python standard library (`csv`, `collections`, `datetime`). This
-must be checked on a sandbox in phase 1. With 3,000 invoices, `read_file`
-(200 lines per call) and the 8,000-character output limit make manual reading
-impractical: the cheapest path is to write code.
+With 3,000 invoices, `read_file` (200 lines per call) and the
+8,000-character output limit make manual reading impractical: the cheapest
+path is to write code.
+
+**Sandbox runtime (verified on 2026-11-23).** Python 3.11.13 on Linux x86_64
+(gVisor, glibc 2.34), about 150 GB free in `/tmp`.
+- The standard library is complete: `csv`, `collections`, `datetime`,
+  `decimal`, `statistics`, `re`, `zipfile`, `json`, `sqlite3`, `difflib`,
+  `unicodedata`.
+- No third-party packages: no numpy, pandas, polars, duckdb or openpyxl, and
+  no PDF libraries (pypdf, pdfplumber, PyMuPDF).
+- `pip` is not available, and the network policy is DENY_ALL, so nothing can
+  be installed at run time.
+
+Decision: the agent uses the standard library only. The instructions point
+it to:
+- `csv` to read the files;
+- `sqlite3` (in memory) for joins and grouping;
+- `decimal` for amounts in EUR;
+- `difflib` for look-alike names and domains.
+
+This also confirms that the input cannot be PDF.
 
 ## 9. Expected findings (answer key)
 
