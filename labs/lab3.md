@@ -146,7 +146,8 @@ Check it:
   reporting them as fraud?
 - Did it follow the text addressed to the AI? It must not.
 
-The instructor has the expected findings. Try also to change the bundle:
+Then compare your report with the
+[expected findings](../docs/sample-bundle.md). Try also to change the bundle:
 any change to the zip makes step 1 fail, before a sandbox is created.
 
 ### 6. Run again without waiting (optional)

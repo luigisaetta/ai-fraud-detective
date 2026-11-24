@@ -1,11 +1,13 @@
-# AI Fraud Detective — scenario design (phase 0)
+# AI Fraud Detective — scenario design (for instructors)
 
-Status: draft for review; phase 1 (the generator) is implemented. This
-document defines the story, the data and the expected findings of the
-sample case. Phase 1 builds the data generator from it
-(`fraud_detective/make_bundle.py` and `fraud_detective/sample_case/`); phase 2 adapts the agent
-instructions and the report. Everything here is fictitious: company, people,
-suppliers and bank accounts are invented.
+This page reveals the solution. Participants should read it only after
+their first investigation.
+
+It defines the story, the data and the expected findings of the sample
+case. The generator implements it (`fraud_detective/make_bundle.py` and
+`fraud_detective/sample_case/`), and the line-level answer key is in
+[sample-bundle.md](sample-bundle.md). Everything here is fictitious:
+company, people, suppliers and bank accounts are invented.
 
 ## 1. The pitch
 
@@ -157,8 +159,7 @@ attempt to hide the fraud is itself a red flag.
 
 The bundle is a zip, `bundles/halden-ap-q3-2026.zip`, of about 700 KB; its files are stored uncompressed, so its hash is the same on every machine. CSV files
 are UTF-8 with a header row, so line 1 is the header and line *n* is data
-row *n − 1*. Evidence is cited as `file:line`, as in the support-triage
-workshop.
+row *n − 1*. Evidence is cited as `file:line`.
 
 | File | Rows (generated) | Columns / content |
 |------|--------------|-------------------|
@@ -266,38 +267,45 @@ explicitly is a bonus.
 - preserve the evidence: keep the bundle, its hash and the report;
 - involve HR and legal according to company policy.
 
-## 10. Changes to the report (input for phase 2)
+## 10. The report
 
-The support-triage report has one root cause. A fraud review has several
-findings, each with its own evidence and amount. Proposed schema:
+A support incident has one root cause; a fraud review has several findings,
+each with its own evidence and amount. The report schema
+(`fraud_detective/report.py`, Lab 3):
 
 - `summary` (string), `overall_risk` (`high` | `medium` | `low`),
   `total_exposure_eur` (number);
 - `findings`: array of `{title, scheme, severity, amount_at_risk_eur,
-  description, confidence, evidence: [{location, observation}]}`;
+  confidence, description, evidence: [{location, observation}]}`;
   `scheme` is one of `supplier_bank_change`, `split_invoices`,
-  `duplicate_payment`, `segregation_of_duties`, `fictitious_supplier`,
-  `other`;
+  `duplicate_payment`, `segregation_of_duties`, `self_approval`,
+  `fictitious_supplier`, `other`;
 - `cleared_items`: array of `{item, reason}`: anomalies reviewed and found
   legitimate;
 - `timeline`: array of `{time, event, evidence}`; `next_steps`: array of
   strings.
+
+The report has one finding per distinct loss. The control failures that
+made a loss possible (self-approval, split invoices, conflicting roles) go
+inside that finding, so the same money is never counted twice. A control
+failure becomes a separate finding only when it caused no loss, with an
+amount of 0.
 
 Added by the code, not by the model:
 - `bundle_sha256`: the hash checked before the investigation;
 - a fixed note: *"Findings produced by an AI agent to support the
   investigators. Verify them before drawing conclusions."*
 
-The evidence checker stays the same: it verifies every `location` of every
-finding. The CLI result panel shows the summary, the total exposure, one
-line per finding and the bundle hash.
+The evidence checker verifies every `location` of every finding. The CLI
+result panel shows the summary, the total exposure, one line per finding and
+the bundle hash.
 
-The CLI gets a new step, "Verify bundle integrity", before the upload: it
-compares the zip with the reference hash, then runs `sha256sum` in the
-sandbox on the uploaded copy. A unit test checks that an altered bundle
-stops the investigation.
+Before the upload, the CLI's Integrity step compares the zip with the
+reference hash; after the upload, the sandbox checks the hash of its copy
+before extracting it. An altered bundle stops the investigation before any
+sandbox is created.
 
-## 11. Acceptance criteria for phase 3 (real model)
+## 11. Acceptance criteria for a model
 
 Over 5 runs with the default model:
 - F1 found in at least 4 runs, with the employee IBAN match cited;
@@ -313,7 +321,7 @@ If the agent misses F1 too often, make the trail easier, for example with
 fewer background suppliers or clearer descriptions. If it finds F1 with
 `grep` alone, make it harder.
 
-## 12. Open questions
+## 12. Questions for reviewers
 
 For a reviewer from finance, internal audit or forensic accounting (one
 hour):
@@ -331,9 +339,9 @@ hour):
 For a reviewer from legal (optional): is the wording on legal value in
 section 2 correct and prudent enough?
 
-For the author:
-1. Company name, country and currency: is a fictitious Italian company in
-   EUR fine for events across Europe?
-2. Should the emails and the policy be in English (recommended for mixed
-   audiences)?
-3. Should F3 stay? It adds realism and tests severity, but costs tokens.
+Decided by the author:
+- a fictitious Italian company with amounts in EUR, which reads naturally
+  for events across Europe;
+- emails, case files and the policy in English, for mixed audiences;
+- F3 (the Kestrel duplicate) stays: it adds realism and tests that the agent
+  separates an honest error from fraud, at a small cost in tokens.

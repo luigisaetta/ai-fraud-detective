@@ -41,6 +41,9 @@ sandbox.
 
 ### 2. Correlating evidence across files
 
+> This section describes the fraud of the sample case. To discover it
+> yourself, read it after your first investigation.
+
 The fraud of the sample case is not in any single row. The model has to
 connect facts written in different files and formats:
 
@@ -59,8 +62,8 @@ connect facts written in different files and formats:
 It must also clear **legitimate anomalies** placed in the data: a large
 round amount every month (the rent), a bank change done by the book, approvals
 on a Saturday (announced for the quarter close). And it must say what is
-*not* established instead of guessing. [The scenario design](scenario-design.md)
-describes the whole case.
+*not* established instead of guessing. [The scenario design](scenario-design.md),
+an instructor page, describes the whole case.
 
 ### 3. Treating bundle content as data
 
@@ -159,4 +162,5 @@ investigation: a model that cites real lines and draws the wrong conclusion
 passes it. That is why the model matters, and why every report says that
 investigators verify the findings. To compare models, run the same sample
 case with each one and check the report against the expected findings in
-[sample-bundle.md](sample-bundle.md).
+[sample-bundle.md](sample-bundle.md); the results so far are in
+[tested-llms.md](tested-llms.md).

@@ -36,7 +36,7 @@ tests/unit/                        infrastructure tests and fake sandbox client
 tests/labN/                        acceptance tests for lab N
 tests/scenario/                    sample case tests and reference solver
 solutions/labN/                    reference solutions for participants
-docs/                              scenario design, sample case findings, lab overview
+docs/                              lab overview, setup and easy path; instructor pages (scenario, answer key)
 bundles/                           generated bundles and their .sha256 files
 out/                               generated Markdown and JSON reports
 ```

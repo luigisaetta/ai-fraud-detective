@@ -290,9 +290,6 @@ when you finish using it. Omit `--keep` on the first run if you want the CLI
 to close the sandbox it creates.
 
 For a map of the project files, see [Repository layout](layout.md).
-Instructors find the story, the data and the answer key in the
-[scenario design](docs/scenario-design.md); participants should read it only
-after their first run, because it reveals the findings.
 
 ## How AI is used
 
@@ -304,8 +301,20 @@ before choosing a model.
 ## The easy path
 
 To run the demo without building the code with Codex, copy the reference
-solutions into `fraud_detective/` with `./copy_solutions.sh all` and go straight to a
-real investigation (see: Lab3). See [The easy path](docs/easy-path.md).
+solutions into `fraud_detective/` with `./copy_solutions.sh all` and go
+straight to a real investigation. See [The easy path](docs/easy-path.md).
+
+## For instructors
+
+These pages reveal the solution: participants should read them only after
+their first investigation.
+
+| Page | What it contains |
+|------|------------------|
+| [Scenario design](docs/scenario-design.md) | The story, the data, the expected findings, the acceptance criteria and the questions for reviewers |
+| [Expected findings](docs/sample-bundle.md) | The answer key, with every piece of evidence as `file:line` |
+| [Data preview](docs/data-preview.md) | The first lines of every file of the bundle, for a finance or audit reviewer |
+| [Tested LLMs](docs/tested-llms.md) | The results of real runs on the sample case |
 
 ## License
 

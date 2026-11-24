@@ -1,4 +1,7 @@
-# Data preview (for a finance or audit reviewer)
+# Data preview (for instructors and reviewers)
+
+This page shows the evidence of the case: participants should read it only
+after their first investigation.
 
 The first lines of every file in the sample bundle, to judge whether the
 data looks like a real ERP export. Emails, case files and the policy are
@@ -7,7 +10,7 @@ web domains end in `.example`, a name reserved for examples.
 
 What to look at: column names and formats, the change log, amounts and
 dates, the roles, and whether anything looks artificial. The full story and
-the open questions are in the [scenario design](scenario-design.md),
+the questions for reviewers are in the [scenario design](scenario-design.md),
 sections 3 to 5 and 12. Generated with `python -m fraud_detective.make_bundle --preview`.
 
 ### `case/engagement_letter.txt` (34 lines)
