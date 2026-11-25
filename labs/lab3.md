@@ -211,3 +211,8 @@ Copy the reference solution and run step 5:
 ```bash
 cp solutions/lab3/report.py solutions/lab3/cli.py fraud_detective/
 ```
+
+## Next (optional)
+
+[Lab 4](lab4.md) asks the OpenAI Decisions API bounded questions about the
+report you just produced.

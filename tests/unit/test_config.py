@@ -1,6 +1,6 @@
 """
 Author: L. Saetta
-Date Last Modified: 2026-11-19
+Date Last Modified: 2026-11-25
 License: MIT
 Description: Unit tests of the settings: values from the TOML file, secrets
     from the environment, defaults, and the problems reported by validate().
@@ -98,3 +98,27 @@ shape = "HUGE"
 def test_invalid_toml_is_reported(tmp_path):
     problems = _load(tmp_path, "[model\nid = ").validate()
     assert any("not valid TOML" in problem for problem in problems)
+
+
+def test_decisions_settings_have_defaults(tmp_path):
+    settings = _load(tmp_path, VALID_TOML)
+    assert settings.decisions_provider is ModelProvider.OPENAI
+    assert settings.decisions_model_id == "gpt-6-luna"
+    assert settings.validate_decisions() == ["OPENAI_API_KEY (.env) is not set"]
+
+
+def test_decisions_settings_come_from_the_toml_file(tmp_path, monkeypatch):
+    monkeypatch.setenv("OCI_GENAI_API_KEY", "oci-test")
+    text = VALID_TOML + '\n[decisions]\nprovider = "oci"\nmodel_id = "openai.luna"\n'
+    settings = _load(tmp_path, text)
+    assert settings.decisions_provider is ModelProvider.OCI
+    assert settings.decisions_model_id == "openai.luna"
+    assert not settings.validate_decisions()
+
+
+def test_decisions_are_not_required_by_validate(tmp_path, monkeypatch):
+    monkeypatch.setenv("OCI_GENAI_API_KEY", "oci-test")
+    text = VALID_TOML.replace('provider = "openai"', 'provider = "oci"')
+    settings = _load(tmp_path, text)
+    assert not settings.validate()
+    assert settings.validate_decisions() == ["OPENAI_API_KEY (.env) is not set"]

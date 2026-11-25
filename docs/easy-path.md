@@ -1,7 +1,8 @@
 # The easy path: run the demo with the reference solutions
 
-In the labs you build four files with Codex: `fraud_detective/tools.py` (Lab 1),
-`fraud_detective/agent.py` (Lab 2), `fraud_detective/report.py` and `fraud_detective/cli.py` (Lab 3).
+In the labs you build these files with Codex: `fraud_detective/tools.py` (Lab 1),
+`fraud_detective/agent.py` (Lab 2), `fraud_detective/report.py` and `fraud_detective/cli.py` (Lab 3),
+and `fraud_detective/decisions.py` (Lab 4, optional).
 Reference versions of all of them are in `solutions/`. On the easy path you
 copy them into `fraud_detective/` and go straight to a real investigation, without
 Codex.
@@ -47,7 +48,7 @@ From the repository root:
 ./copy_solutions.sh all
 ```
 
-It copies the four files into `fraud_detective/`. A file that is already there (for
+It copies the files of all the labs into `fraud_detective/`. A file that is already there (for
 example code you built with Codex) is kept: the script says so. To replace
 it with the reference version, add `--force`:
 
@@ -55,8 +56,9 @@ it with the reference version, add `--force`:
 ./copy_solutions.sh all --force
 ```
 
-You can also copy one lab at a time: `./copy_solutions.sh lab1`, `lab2` or
-`lab3`. Each lab needs the files of the labs before it.
+You can also copy one lab at a time: `./copy_solutions.sh lab1`, `lab2`,
+`lab3` or `lab4`. Labs 1–3 each need the files of the labs before them; Lab 4
+needs only a saved report.
 
 ## 4. Check that everything works
 
@@ -86,6 +88,13 @@ were verified. The report is in `out/halden-ap-q3-2026-report.md`; the
 trace of the tool calls, with the code the model ran, is in
 `out/halden-ap-q3-2026-trace.md`.
 The [expected findings](sample-bundle.md) list what a good report finds.
+
+Optionally, with an OpenAI API key in `.env`, ask the Decisions API
+(Lab 4) about the report:
+
+```bash
+python -m fraud_detective.decisions out/halden-ap-q3-2026-report.json
+```
 
 ## 6. Clean up
 

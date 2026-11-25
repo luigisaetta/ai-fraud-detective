@@ -1,6 +1,6 @@
 """
 Author: L. Saetta
-Date Last Modified: 2026-11-19
+Date Last Modified: 2026-11-25
 License: MIT
 Description: Application settings, from two sources:
 
@@ -78,6 +78,8 @@ class Settings:  # pylint: disable=too-many-instance-attributes
         sandbox_ready_timeout_seconds: Longest wait for a new sandbox to run.
         sandbox_warm_pool: Name of the project's warm pool to start sandboxes
             from; empty to start them cold.
+        decisions_provider: Where the Decisions API is called (Lab 4).
+        decisions_model_id: The model of the Decisions API (Lab 4).
         load_problems: Problems found while reading the configuration file.
     """
 
@@ -96,6 +98,8 @@ class Settings:  # pylint: disable=too-many-instance-attributes
     sandbox_max_command_seconds: int
     sandbox_ready_timeout_seconds: int
     sandbox_warm_pool: str
+    decisions_provider: ModelProvider = ModelProvider.OPENAI
+    decisions_model_id: str = "gpt-6-luna"
     load_problems: tuple[str, ...] = field(default=(), compare=False)
 
     @classmethod
@@ -141,6 +145,10 @@ class Settings:  # pylint: disable=too-many-instance-attributes
                 "sandbox", "ready_timeout_seconds", 600
             ),
             sandbox_warm_pool=config.text("sandbox", "warm_pool"),
+            decisions_provider=config.choice(
+                "decisions", "provider", ModelProvider.OPENAI
+            ),
+            decisions_model_id=config.text("decisions", "model_id", "gpt-6-luna"),
             load_problems=tuple(config.problems),
         )
 
@@ -181,6 +189,26 @@ class Settings:  # pylint: disable=too-many-instance-attributes
             problems.append("sandbox.max_command_seconds must be a positive integer")
         if self.sandbox_ready_timeout_seconds < 1:
             problems.append("sandbox.ready_timeout_seconds must be a positive integer")
+        return problems
+
+    def validate_decisions(self) -> list[str]:
+        """Check the settings used by the Decisions API (Lab 4).
+
+        They are separate from validate(): Labs 1-3 do not need them.
+
+        Returns:
+            One human-readable message per problem; empty when all is well.
+        """
+        problems = list(self.load_problems)
+        required = {"decisions.model_id": self.decisions_model_id}
+        if self.decisions_provider is ModelProvider.OCI:
+            required["oci.region"] = self.oci_region
+            required["OCI_GENAI_API_KEY (.env)"] = self.oci_genai_api_key
+        else:
+            required["OPENAI_API_KEY (.env)"] = self.openai_api_key
+        problems += [
+            f"{name} is not set" for name, value in required.items() if not value
+        ]
         return problems
 
     @property

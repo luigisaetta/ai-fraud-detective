@@ -43,6 +43,11 @@ will learn in each lab.
 | 1 | [Sandbox tools](labs/lab1.md) | `fraud_detective/tools.py` |
 | 2 | [Agent loop](labs/lab2.md) | `fraud_detective/agent.py` |
 | 3 | [Report and end-to-end run](labs/lab3.md) | `fraud_detective/report.py`, `fraud_detective/cli.py` |
+| 4 (optional) | [Decision support with the Decisions API](labs/lab4.md) | `fraud_detective/decisions.py` |
+
+The optional Lab 4 adds a second use of AI: the OpenAI Decisions API reads
+the finished report and answers bounded questions, such as fraud or honest
+error, with probabilities, in about a second. It needs an OpenAI API key.
 
 ## The case
 
@@ -93,6 +98,7 @@ Have these ready:
   projects and sandboxes. Ask your tenancy administrator for the required permissions.
 - The OCI CLI installed and OCI credentials configured in `~/.oci/config`.
 - An OCI Generative AI API key, or an OpenAI API key if you use OpenAI for the model.
+  The optional Lab 4 needs an OpenAI API key in any case.
 
 **You need OCI for the sandboxes even when the model provider is OpenAI.**
 See [Lab 0](labs/lab0.md) for the project settings, concepts and troubleshooting.
@@ -224,7 +230,8 @@ sandbox to stop is acceptable: delete it later with
 ## Work through Labs 1–3
 
 Start with the [Lab 1 guide](labs/lab1.md), then continue with
-[Lab 2](labs/lab2.md) and [Lab 3](labs/lab3.md). In each lab:
+[Lab 2](labs/lab2.md) and [Lab 3](labs/lab3.md), and optionally
+[Lab 4](labs/lab4.md). In each lab:
 
 1. Read the guide to understand the module and its interfaces.
 2. Give Codex the lab's prompt from `prompts/`, as directed by the guide.

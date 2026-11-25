@@ -46,3 +46,12 @@ ready_timeout_seconds = 1800
 # "shape" above); empty to start sandboxes cold. Pools are created with the
 # project, in the OCI Console.
 warm_pool = ""
+
+[decisions]
+# Lab 4 (optional): the OpenAI Decisions API, which answers bounded questions
+# about the report. Where it is called: "openai" (the default for the
+# workshop, with OPENAI_API_KEY in .env) or "oci" (where available, with
+# OCI_GENAI_API_KEY).
+provider = "openai"
+# The Decisions API model: "gpt-6-luna" on OpenAI, "openai.gpt-6-luna" on OCI.
+model_id = "gpt-6-luna"

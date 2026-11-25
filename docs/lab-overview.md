@@ -17,6 +17,7 @@ additional time for reading and review.
 | 1 | Sandbox tools | `fraud_detective/tools.py` | local fake | 5–7 min |
 | 2 | Agent loop | `fraud_detective/agent.py` | local fake + model | 5–7 min |
 | 3 | Report and end-to-end run | `fraud_detective/report.py`, `fraud_detective/cli.py` | OCI Sandbox + model | 5–7 min |
+| 4 (optional) | Decision support | `fraud_detective/decisions.py` | OpenAI Decisions API | 5–7 min |
 
 Each lab has four parts:
 
@@ -138,3 +139,26 @@ sandbox lifecycle (create, attach, snapshot, cleanup).
 
 **Done when:** `pytest tests/lab3` passes and the report finds the fraud of
 the sample case, with its amount and verified evidence.
+
+---
+
+## Lab 4 (optional) — Decision support
+
+**Goal:** bounded decisions on the finished report, with the OpenAI
+Decisions API.
+
+**Build with Codex:** `fraud_detective/decisions.py` —
+`python -m fraud_detective.decisions out/<bundle>-report.json` sends the report
+as `input_json` to the Decisions API (`gpt-6-luna`) with three questions,
+in one request: for each finding, the probability of a deliberate act
+rather than an error, and of an amount not yet paid that can still be
+stopped; for the case, one of four next actions. It prints the answers,
+read against thresholds set by people, and writes them next to the report.
+
+**You learn:** the Responses API for open-ended work and the Decisions API
+for bounded answers; questions about observable criteria; probabilities and
+thresholds; why a model that gives no explanation works on a report and not
+instead of it.
+
+**Done when:** `pytest tests/lab4` passes and the decision support separates
+the fraud from the honest error of the sample case.

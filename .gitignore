@@ -15,6 +15,7 @@ fraud_detective/tools.py
 fraud_detective/agent.py
 fraud_detective/report.py
 fraud_detective/cli.py
+fraud_detective/decisions.py
 
 # Personal notes, not versioned for now.
 lsnotes/

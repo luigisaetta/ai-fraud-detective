@@ -6,14 +6,15 @@ whole investigation**. The code around it provides tools, isolation and
 checks, but it contains no investigation logic. The quality of the review
 depends directly on the quality of the model.
 
-AI appears in two places:
+AI appears in three places:
 
 | When | Who | What it does |
 |------|-----|--------------|
-| Building the code (Labs 1–3) | Codex | writes `tools.py`, `agent.py`, `report.py`, `cli.py` from the prompts, `AGENTS.md` and the tests |
+| Building the code (Labs 1–4) | Codex | writes `tools.py`, `agent.py`, `report.py`, `cli.py` and `decisions.py` from the prompts, `AGENTS.md` and the tests |
 | Running the agent | an OpenAI GPT model, through the Responses API (OCI Generative AI or OpenAI) | plans and runs the investigation, then writes the report |
+| Decision support (Lab 4, optional) | `gpt-6-luna`, through the Decisions API | answers bounded questions about the finished report, with probabilities |
 
-The rest of this note is about the second one.
+Most of this note is about the second one; the last section covers the third.
 
 ## The model is the investigator
 
@@ -121,6 +122,22 @@ In both cases the client code is the same: it only passes
 | `agent.py`, next calls | `previous_response_id` + tool outputs | continue the investigation |
 | `agent.py`, budget exhausted | same, with `tool_choice="none"` | best answer with the evidence collected |
 | `report.py` | `previous_response_id` + strict JSON schema | structured report |
+| `decisions.py` (Lab 4) | the report as `input_json` + bounded questions, on the Decisions API | probabilities and a suggested action |
+
+## The model that decides (Lab 4)
+
+The Decisions API does not investigate: it reads the saved report and
+answers closed questions, all in one request of about a second. For each
+finding, the probability of a deliberate act rather than an error, and of an
+amount that is not yet paid and can still be stopped; for the case, one of
+four next actions. It returns typed values and probabilities, never an
+explanation, which is why it works on the report and not instead of it.
+
+Two things are up to people. The questions must be about criteria that can
+be checked in the report: "stopped *or recovered*" mixes two situations, and
+in our tests its answer changed from one report to another, while "not yet
+paid" did not. And a probability becomes a decision only through thresholds
+that people choose.
 
 ## What the model must be good at
 

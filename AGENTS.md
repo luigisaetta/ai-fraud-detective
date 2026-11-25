@@ -17,7 +17,8 @@ Generative AI or on OpenAI. The model does not run code itself: it calls
 function tools, and every command those tools run is executed inside an
 isolated OCI Sandbox. The output is a forensic report with findings (each with
 scheme, severity, amount at risk in EUR, confidence and evidence as
-`file:line`), cleared anomalies, timeline and next steps.
+`file:line`), cleared anomalies, timeline and next steps. An optional Lab 4
+asks the OpenAI Decisions API bounded questions about the saved report.
 
 This is a LiveLabs workshop. In each lab the participant asks you to build one
 module. The other modules are provided and must be used as they are.
@@ -31,7 +32,7 @@ config/settings.toml     configuration, versioned, no secrets
 fraud_detective/
   config.py              Settings: config/settings.toml + .env       (provided)
   oci_clients.py         OCI SDK clients                              (provided)
-  llm.py                 OpenAI client for the configured provider    (provided)
+  llm.py                 OpenAI clients: model and Decisions API      (provided)
   sandbox.py             SandboxManager, SandboxSession, CommandResult (provided)
   ingest.py              hash check and safe upload of a bundle zip   (provided)
   make_bundle.py         writes the sample case bundle and its hash   (provided)
@@ -42,6 +43,7 @@ fraud_detective/
   agent.py               Responses API loop with function calling     (Lab 2)
   report.py              structured forensic report                   (Lab 3)
   cli.py                 command line entry point                     (Lab 3)
+  decisions.py           decision support with the Decisions API      (Lab 4, optional)
 tests/unit/              unit tests and fakes (fakes.py)
 tests/labN/              acceptance tests of lab N
 tests/scenario/          tests of the sample case and reference solver

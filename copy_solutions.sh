@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: L. Saetta
-# Date Last Modified: 2026-11-23
+# Date Last Modified: 2026-11-25
 # License: MIT
 # Description: Copies the reference solutions from solutions/labN/ into
 #     fraud_detective/, for the easy path (docs/easy-path.md) or to get past a lab.
@@ -9,10 +9,11 @@
 #     Codex) is not overwritten unless --force is given.
 #
 # Usage:
-#     ./copy_solutions.sh all        # the three labs: the demo is ready to run
+#     ./copy_solutions.sh all        # all the labs: the demo is ready to run
 #     ./copy_solutions.sh lab1       # fraud_detective/tools.py
 #     ./copy_solutions.sh lab2       # fraud_detective/agent.py
 #     ./copy_solutions.sh lab3       # fraud_detective/report.py and fraud_detective/cli.py
+#     ./copy_solutions.sh lab4       # fraud_detective/decisions.py (optional lab)
 #     ./copy_solutions.sh all --force   # also replace existing files
 
 set -euo pipefail
@@ -20,7 +21,7 @@ set -euo pipefail
 cd "$(dirname "$0")"
 
 usage() {
-    echo "Usage: ./copy_solutions.sh lab1|lab2|lab3|all [--force]"
+    echo "Usage: ./copy_solutions.sh lab1|lab2|lab3|lab4|all [--force]"
     exit 1
 }
 
@@ -35,11 +36,13 @@ case "$1" in
     lab1) files=(solutions/lab1/tools.py) ;;
     lab2) files=(solutions/lab2/agent.py) ;;
     lab3) files=(solutions/lab3/report.py solutions/lab3/cli.py) ;;
+    lab4) files=(solutions/lab4/decisions.py) ;;
     all)
         files=(
             solutions/lab1/tools.py
             solutions/lab2/agent.py
             solutions/lab3/report.py solutions/lab3/cli.py
+            solutions/lab4/decisions.py
         )
         ;;
     *) usage ;;

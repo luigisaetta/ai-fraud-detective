@@ -19,7 +19,7 @@ config/
 fraud_detective/
   config.py                        settings and secret loading (provided)
   oci_clients.py                   OCI SDK clients (provided)
-  llm.py                           configured model client (provided)
+  llm.py                           model and Decisions API clients (provided)
   sandbox.py                       sandbox lifecycle, commands and files (provided)
   ingest.py                        bundle hash check, safe upload and extraction (provided)
   make_bundle.py                   writes the sample case bundle and its hash (provided)
@@ -30,7 +30,8 @@ fraud_detective/
   agent.py                         Responses API investigation loop (Lab 2)
   report.py                        structured forensic report and evidence checks (Lab 3)
   cli.py                           command line for a complete investigation (Lab 3)
-labs/                              participant guides: lab0.md through lab3.md
+  decisions.py                     decision support with the Decisions API (Lab 4, optional)
+labs/                              participant guides: lab0.md through lab4.md
 prompts/                           the Codex prompt for each lab
 tests/unit/                        infrastructure tests and fake sandbox client
 tests/labN/                        acceptance tests for lab N
@@ -42,9 +43,10 @@ out/                               generated reports (Markdown, JSON) and tool-c
 ```
 
 The `(provided)` modules supply the infrastructure used by the labs.
-Labs 1–3 focus on `tools.py`, `agent.py`, `report.py` and `cli.py`; follow
-each guide and its Codex prompt to implement or review those modules.
-You will create these modules in `fraud_detective/` as you complete Labs 1–3.
+Labs 1–3 focus on `tools.py`, `agent.py`, `report.py` and `cli.py`, and the
+optional Lab 4 on `decisions.py`; follow each guide and its Codex prompt to
+implement or review those modules. You will create these modules in
+`fraud_detective/` as you complete the labs.
 
 Each lab has a guide in `labs/`, a Codex prompt in `prompts/` and
 acceptance tests in `tests/labN/`. Reference solutions in `solutions/`
