@@ -152,11 +152,11 @@ the Python environment, while `.env` contains your API keys.
 
 Open `config/settings.toml` and fill in the configuration:
 
-| Section | What to set |
-|---------|-------------|
-| `[model]` | `provider` (`oci` or `openai`) and `model_id` |
-| `[oci]` | `region`, your `project_id`, and the OCI SDK `profile` and `auth` |
-| `[sandbox]` | Keep the workshop defaults to start with |
+| Section | What to set | Example |
+|---------|-------------|---------|
+| `[model]` | `provider` (`oci` or `openai`) and `model_id` | `provider = "openai"`, `model_id = "gpt-6.1-sol"`; on OCI: `provider = "oci"`, `model_id = "openai.gpt-6.1-sol"` |
+| `[oci]` | `region`, your `project_id`, and the OCI SDK `profile` and `auth` | `region = "eu-frankfurt-1"`, `project_id = "ocid1.generativeaiproject.oc1.eu-frankfurt-1.<unique-id>"`, `profile = "DEFAULT"`, `auth = "api_key"` |
+| `[sandbox]` | Keep the workshop defaults to start with | `runtime = "python-3.11"`, `shape = "SMALL"`, `lifetime_minutes = 60` |
 
 The OCI region and credential profile must match the project you will use.
 See [Lab 0, step 3](../labs/lab0.md#3-configure-the-agent) for more context.
