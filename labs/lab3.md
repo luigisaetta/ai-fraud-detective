@@ -5,6 +5,10 @@ Sandbox creation may occasionally take longer.
 **You build:** `fraud_detective/report.py` and `fraud_detective/cli.py`, with Codex.
 **Runs on:** a real OCI Sandbox and the real model.
 
+> **Working directory:** Run all terminal commands in this guide from the
+> project root (`ai-fraud-detective/`), the directory containing `README.md`,
+> `config/`, and `fraud_detective/`. Do not change into `labs/`.
+
 ## Goal
 
 Put everything together: one command verifies a case bundle, runs the

@@ -5,6 +5,10 @@
 **Runs on:** your machine: a fake sandbox, and the real model for the
 optional try at the end.
 
+> **Working directory:** Run all terminal commands in this guide from the
+> project root (`ai-fraud-detective/`), the directory containing `README.md`,
+> `config/`, and `fraud_detective/`. Do not change into `labs/`.
+
 ## Goal
 
 In Lab 1 you gave the model tools. Now you build the **agent**: the loop that

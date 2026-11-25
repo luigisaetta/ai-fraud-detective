@@ -4,6 +4,10 @@
 **You build:** `fraud_detective/decisions.py`, with Codex.
 **Runs on:** the OpenAI Decisions API (model `gpt-6-luna`); no sandbox.
 
+> **Working directory:** Run all terminal commands in this guide from the
+> project root (`ai-fraud-detective/`), the directory containing `README.md`,
+> `config/`, and `fraud_detective/`. Do not change into `labs/`.
+
 ## Goal
 
 The agent of Labs 1–3 *investigates*: it explores the bundle step by step,

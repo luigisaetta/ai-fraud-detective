@@ -4,6 +4,10 @@
 **You build:** `fraud_detective/tools.py`, with Codex.
 **Runs on:** your machine, against a fake sandbox. No OCI calls.
 
+> **Working directory:** Run all terminal commands in this guide from the
+> project root (`ai-fraud-detective/`), the directory containing `README.md`,
+> `config/`, and `fraud_detective/`. Do not change into `labs/`.
+
 ## Goal
 
 The agent never runs code on your machine and never sees the whole

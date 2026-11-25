@@ -5,6 +5,10 @@ Sandbox creation may occasionally take longer.
 **You build:** nothing; everything in this lab is provided.
 **Runs on:** your machine and OCI.
 
+> **Working directory:** Run all terminal commands in this guide from the
+> project root (`ai-fraud-detective/`), the directory containing `README.md`,
+> `config/`, and `fraud_detective/`. Do not change into `labs/`.
+
 ## Goal
 
 Prepare everything the next labs need, and prove that it works:

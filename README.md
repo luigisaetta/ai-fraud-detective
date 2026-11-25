@@ -229,6 +229,11 @@ sandbox to stop is acceptable: delete it later with
 
 ## Work through Labs 1–3
 
+> **Working directory:** Run all terminal commands for the labs from the
+> project root (`ai-fraud-detective/`), the directory containing `README.md`,
+> `config/`, and `fraud_detective/`. Keep your workshop Python environment
+> active, and do not change into `labs/`.
+
 Start with the [Lab 1 guide](labs/lab1.md), then continue with
 [Lab 2](labs/lab2.md) and [Lab 3](labs/lab3.md), and optionally
 [Lab 4](labs/lab4.md). In each lab:
