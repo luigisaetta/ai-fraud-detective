@@ -95,7 +95,8 @@ Have these ready:
   The commands below use Conda to create a Python 3.12 environment; the
   [venv setup guide](docs/setup-venv.md) provides the alternative walkthrough.
 - Access to an OCI tenancy and a compartment where you can create Generative AI
-  projects and sandboxes. Ask your tenancy administrator for the required permissions.
+  projects and sandboxes. Ask your tenancy administrator for the required
+  permissions: [OCI policies for the workshop](docs/oci-policies.md) lists them.
 - The OCI CLI installed and OCI credentials configured in `~/.oci/config`.
 - An OCI Generative AI API key, or an OpenAI API key if you use OpenAI for the model.
   The optional Lab 4 needs an OpenAI API key in any case.
