@@ -7,23 +7,35 @@ explains why each one is there, and gives the commands to create them.
 All the policies are at **compartment level**: nothing is granted in the
 whole tenancy.
 
-## Who needs access to what
+## Two ways to call the model
 
-The workshop uses two different identities, and each one needs its own
-policy:
+The sandboxes always run on OCI. The model can be called in two ways, and
+the key in `.env` and the policies depend on the choice:
+
+| Model provider | Key in `.env` | OCI policies |
+|----------------|---------------|--------------|
+| **OpenAI** (the usual setup) | an **OpenAI API key**, `OPENAI_API_KEY` | policy 1 only |
+| **OCI Generative AI** | an **OCI Generative AI API key**, `OCI_GENAI_API_KEY` | policies 1, 2 and 3 |
+
+The provider is `[model] provider` in `config/settings.toml`. With OpenAI,
+the model calls go to OpenAI and need no OCI policy. The OCI path is
+available only where the chosen model is offered to the tenancy by OCI
+Generative AI. Lab 4 calls the OpenAI Decisions API with the OpenAI key in
+both cases.
+
+## Who needs access to what
 
 | Identity | What it does | Used by |
 |----------|--------------|---------|
-| The **participant's OCI user**, through `~/.oci/config` (API key or session token) | Creates the Generative AI project; creates, uses, stops and deletes sandboxes; writes and reads files in them | the OCI CLI (`generative-ai-project create`), the preflight, the agent, `fraud_detective.cleanup` |
-| The **OCI Generative AI API key** (`OCI_GENAI_API_KEY` in `.env`) | Calls the model with the Responses API, inside the project (conversations, `previous_response_id`) | the agent of Labs 2–3, the preflight model check, Lab 4 on OCI |
+| The **participant's OCI user**, through `~/.oci/config` (signing key or session token) | Creates the Generative AI project; creates, uses, stops and deletes sandboxes; writes and reads files in them | the OCI CLI (`generative-ai-project create`), the preflight, the agent, `fraud_detective.cleanup` |
+| The **OpenAI API key** (`OPENAI_API_KEY`), usual setup | Calls the model on OpenAI | the agent of Labs 2–3, the preflight model check, Lab 4 |
+| The **OCI Generative AI API key** (`OCI_GENAI_API_KEY`), only when the model runs on OCI | Calls the model with the Responses API, inside the project (conversations, `previous_response_id`) | the agent of Labs 2–3, the preflight model check |
 
-A Generative AI API key is not an OCI IAM user and does not belong to a
-group. Its requests have the principal type `generativeaiapikey`, so its
-policy uses `any-user` with a `where` condition on that type.
-
-If participants use **OpenAI** for the model, the API key policy is not
-needed: only the sandbox and project policies are. Lab 4 with the default
-configuration calls OpenAI and needs no OCI policy.
+The OpenAI API key is managed in the OpenAI platform and needs no OCI
+policy. An OCI Generative AI API key is not an OCI IAM user and does not
+belong to a group: its requests have the principal type
+`generativeaiapikey`, so its policy uses `any-user` with a `where`
+condition on that type.
 
 ## The policies
 
@@ -67,7 +79,9 @@ workshop does not restrict them. Besides creating sandboxes and running
 commands, the workshop stops them, writes and reads files in them, can take
 snapshots and extend their lifetime.
 
-### 2. Optional: participants create their own API key
+### 2. Model on OCI only, optional: participants create their own key
+
+Skip policies 2 and 3 when the model runs on OpenAI.
 
 If each participant creates their own OCI Generative AI API key in the
 compartment ([API key permissions][apikey-permissions]):
@@ -78,7 +92,7 @@ Allow group fraud-detective-users to manage generative-ai-apikey in compartment 
 
 Skip it if the administrator creates the keys and hands them out.
 
-### 3. The API key: model calls
+### 3. Model on OCI only: calls with the OCI Generative AI API key
 
 ```text
 Allow any-user to use generative-ai-family in compartment id <compartment-ocid> where ALL {request.principal.type='generativeaiapikey'}
@@ -119,28 +133,24 @@ problems with the `where` clause.
 participants. If the group is not in the `Default` domain, write it in the
 statements as `group '<domain-name>'/'fraud-detective-users'`.
 
-**2. The statements.** Save them in two files, replacing the placeholders.
-`users-policy.json`:
+**2. The participants' policy (always).** Save the statements in
+`users-policy.json`, replacing the placeholders:
 
 ```json
 [
   "Allow group fraud-detective-users to manage generative-ai-project in compartment id <compartment-ocid>",
-  "Allow group fraud-detective-users to manage generative-ai-sandbox in compartment id <compartment-ocid>",
-  "Allow group fraud-detective-users to manage generative-ai-apikey in compartment id <compartment-ocid>"
+  "Allow group fraud-detective-users to manage generative-ai-sandbox in compartment id <compartment-ocid>"
 ]
 ```
 
-Remove the last line if participants do not create their own keys.
-
-`apikey-policy.json`:
+When the model runs on OCI and participants create their own keys, add
+policy 2 to the list, after a comma:
 
 ```json
-[
-  "Allow any-user to use generative-ai-family in compartment id <compartment-ocid> where ALL {request.principal.type='generativeaiapikey'}"
-]
+  "Allow group fraud-detective-users to manage generative-ai-apikey in compartment id <compartment-ocid>"
 ```
 
-**3. Create the two policies** in the workshop compartment:
+Create the policy in the workshop compartment:
 
 ```bash
 oci iam policy create \
@@ -149,6 +159,19 @@ oci iam policy create \
   --description "AI Fraud Detective workshop: projects and sandboxes for the participants" \
   --statements file://users-policy.json
 ```
+
+With OpenAI as the model provider, this is the only policy: go to step 4.
+
+**3. The API key policy (model on OCI only).** Save the statement in
+`apikey-policy.json`:
+
+```json
+[
+  "Allow any-user to use generative-ai-family in compartment id <compartment-ocid> where ALL {request.principal.type='generativeaiapikey'}"
+]
+```
+
+Create the policy:
 
 ```bash
 oci iam policy create \
@@ -184,8 +207,11 @@ Policies are not the only prerequisite:
   participants at the same time: one `SMALL` sandbox (1 OCPU, 4 GB) per
   participant, plus the test sandbox of the preflight
   ([Sandbox limits][sandbox-limits]). Ask for an increase in advance.
-- **Models.** The model in `config/settings.toml` and the compaction model
-  `openai.gpt-oss-120b` must be available in the region.
+- **Keys and models.** With OpenAI, each participant needs an OpenAI API
+  key with access to the model in `config/settings.toml` and, for Lab 4, to
+  the Decisions API. With the model on OCI, each participant needs an OCI
+  Generative AI API key, and both the model and the compaction model of
+  short-term memory, `openai.gpt-oss-120b`, must be available in the region.
 - **Network policy.** A project's network policy cannot be changed after
   creation, and sandboxes cannot be disabled once enabled
   ([Creating a project][create-project]). A wrong project must be recreated.
@@ -196,7 +222,8 @@ Policies are not the only prerequisite:
 |---------|--------------|
 | `404 NotAuthorizedOrNotFound` on the project or on the sandboxes | Policy 1 missing, a wrong compartment, or `oci.region` is not the project's region |
 | The sandbox can be listed but not created or deleted | `use` instead of `manage` on `generative-ai-sandbox` |
-| The model call is refused (`401`, `403` or `404`) | Policy 3 missing, or a wrong or expired key in `.env` |
+| The model call is refused (`401`, `403` or `404`), model on OpenAI | A wrong or expired `OPENAI_API_KEY`, or the key has no access to the model |
+| The model call is refused (`401`, `403` or `404`), model on OCI | Policy 3 missing, or a wrong or expired `OCI_GENAI_API_KEY` |
 | `429` when creating sandboxes | Service limits reached: delete leftovers with `python -m fraud_detective.cleanup --delete` |
 
 ## Sources
