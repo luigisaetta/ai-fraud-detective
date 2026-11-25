@@ -1,19 +1,23 @@
 """
 Author: L. Saetta
-Date Last Modified: 2026-11-20
+Date Last Modified: 2026-11-25
 License: MIT
 Description: Unit tests of the project and model checks of the preflight:
     server-side conversation settings of the project, and a model call that
-    continues on the server with previous_response_id. No OCI or model call
-    is made.
+    continues on the server with previous_response_id; the hints for calls
+    refused by the service, for example for missing IAM policies. No OCI or
+    model call is made.
 """
 
 # pylint: disable=missing-function-docstring
 
+import dataclasses
 from pathlib import Path
 from types import SimpleNamespace
 
-from fraud_detective.config import Settings
+from oci.exceptions import ServiceError
+
+from fraud_detective.config import ModelProvider, Settings
 from fraud_detective.preflight import checks
 from fraud_detective.preflight.base import PreflightContext, Status
 
@@ -128,3 +132,83 @@ def test_model_check_reports_a_failed_server_side_conversation(monkeypatch):
     result = checks.ModelCheck().run(_context(monkeypatch))
     assert result.status is Status.FAIL
     assert "server-side conversation failed" in result.detail
+
+
+class FakeApiError(Exception):
+    """A refused model call, with the HTTP status as in the openai package."""
+
+    def __init__(self, status_code):
+        super().__init__(f"Error code: {status_code}")
+        self.status_code = status_code
+
+
+class FailingResponses:
+    """``client.responses`` whose first call is refused."""
+
+    def __init__(self, error):
+        self._error = error
+
+    def create(self, **kwargs):
+        raise self._error
+
+
+def test_service_hints_point_to_the_policies_page():
+    for status in (403, 404):
+        hint = checks._hint(ServiceError(status, "NotAuthorized", {}, "refused"))
+        assert checks.POLICIES_PAGE in hint
+        assert "generative-ai-" not in hint
+
+
+def test_model_check_refused_on_oci_points_to_the_policies(monkeypatch):
+    _fake_model(monkeypatch, FailingResponses(FakeApiError(404)))
+    result = checks.ModelCheck().run(_context(monkeypatch))
+    assert result.status is Status.FAIL
+    assert "model.model_id" in result.hint
+    assert checks.POLICIES_PAGE in result.hint
+
+
+def test_model_check_refused_on_openai_does_not_mention_oci_policies(monkeypatch):
+    _fake_model(monkeypatch, FailingResponses(FakeApiError(403)))
+    context = _context(monkeypatch)
+    context.settings = dataclasses.replace(
+        context.settings, model_provider=ModelProvider.OPENAI
+    )
+    result = checks.ModelCheck().run(context)
+    assert result.status is Status.FAIL
+    assert checks.POLICIES_PAGE not in result.hint
+
+
+def test_model_check_with_a_refused_api_key(monkeypatch):
+    _fake_model(monkeypatch, FailingResponses(FakeApiError(401)))
+    result = checks.ModelCheck().run(_context(monkeypatch))
+    assert result.status is Status.FAIL
+    assert "API key in .env was refused" in result.hint
+
+
+class RefusingSession:
+    """A test sandbox where every call is refused by the service."""
+
+    sandbox_id = "ocid1.sandbox.test"
+
+    def _refuse(self, *args, **kwargs):
+        raise ServiceError(404, "NotAuthorizedOrNotFound", {}, "refused")
+
+    write_file = read_file = run = close = _refuse
+
+
+def test_sandbox_check_refused_by_the_service_fails_with_a_hint(monkeypatch):
+    context = _context(monkeypatch)
+    context.session = RefusingSession()
+    result = checks.FileTransferCheck().run(context)
+    assert result.status is Status.FAIL
+    assert result.detail == "HTTP 404: NotAuthorizedOrNotFound"
+    assert checks.POLICIES_PAGE in result.hint
+
+
+def test_cleanup_refused_by_the_service_names_the_leftover_sandbox(monkeypatch):
+    context = _context(monkeypatch)
+    context.session = RefusingSession()
+    result = checks.CleanupCheck().run(context)
+    assert result.status is Status.FAIL and not result.blocking
+    assert "ocid1.sandbox.test was not deleted" in result.detail
+    assert "fraud_detective.cleanup --delete" in result.hint

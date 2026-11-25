@@ -1,6 +1,6 @@
 """
 Author: L. Saetta
-Date Last Modified: 2026-11-20
+Date Last Modified: 2026-11-25
 License: MIT
 Description: The preflight checks, in the order they run. Each check verifies
     one thing and, when it fails, says how to fix it:
@@ -26,9 +26,13 @@ import time
 
 from oci.exceptions import ServiceError
 
+from fraud_detective.config import ModelProvider
 from fraud_detective.llm import ModelClientFactory
 from fraud_detective.preflight.base import Check, CheckResult, PreflightContext
 from fraud_detective.sandbox import SandboxError, SandboxSession
+
+#: The page that lists the IAM policies of the workshop, named in the hints.
+POLICIES_PAGE = "docs/oci-policies.md"
 
 #: Lifetime of the test sandbox: short, so a leftover is stopped soon, but
 #: long enough for a slow cold start, the checks and a slow stop.
@@ -211,8 +215,12 @@ class ModelCheck(Check):
         except Exception as error:  # pylint: disable=broad-exception-caught
             return CheckResult.failed(
                 _error_line(error),
-                "Check model.model_id, the API key in .env and, for OCI, that the model "
-                "is available in oci.region.",
+                _model_hint(
+                    error,
+                    settings.model_provider,
+                    "Check model.model_id, the API key in .env and, for OCI, that the "
+                    "model is available in oci.region.",
+                ),
             )
         called = [item for item in response.output if item.type == "function_call"]
         if not called:
@@ -241,8 +249,12 @@ class ModelCheck(Check):
         except Exception as error:  # pylint: disable=broad-exception-caught
             return CheckResult.failed(
                 f"server-side conversation failed: {_error_line(error)}",
-                "The agent needs store=True and previous_response_id: check the "
-                "conversation settings of the project (Lab 0).",
+                _model_hint(
+                    error,
+                    settings.model_provider,
+                    "The agent needs store=True and previous_response_id: check the "
+                    "conversation settings of the project (Lab 0).",
+                ),
             )
         return CheckResult.passed(
             f"{settings.model_id} called {called[0].name}, conversation continued "
@@ -281,13 +293,30 @@ class SandboxStartCheck(Check):
         )
 
 
-class RuntimeToolsCheck(Check):
+class SandboxCheck(Check):
+    """A check that works in the test sandbox. A call the service refuses,
+    for example for missing permissions, becomes a failure with a hint."""
+
+    def run(self, context: PreflightContext) -> CheckResult:
+        try:
+            return self.check(context)
+        except ServiceError as error:
+            return CheckResult.failed(
+                f"HTTP {error.status}: {error.code}", _hint(error)
+            )
+
+    def check(self, context: PreflightContext) -> CheckResult:
+        """The check itself; subclasses implement it."""
+        raise NotImplementedError
+
+
+class RuntimeToolsCheck(SandboxCheck):
     """The runtime has the tools the agent needs, and /workspace is writable."""
 
     name = "Runtime tools"
     description = "looking for the tools the agent needs"
 
-    def run(self, context: PreflightContext) -> CheckResult:
+    def check(self, context: PreflightContext) -> CheckResult:
         tools = REQUIRED_TOOLS + OPTIONAL_TOOLS
         probe = (
             f"for t in {' '.join(tools)}; do "
@@ -316,13 +345,13 @@ class RuntimeToolsCheck(Check):
         return CheckResult.passed(f"{detail} {' '.join(OPTIONAL_TOOLS)}")
 
 
-class FileTransferCheck(Check):
+class FileTransferCheck(SandboxCheck):
     """A binary file written to the sandbox reads back identical."""
 
     name = "File transfer"
     description = "writing and reading back a 1 MiB file"
 
-    def run(self, context: PreflightContext) -> CheckResult:
+    def check(self, context: PreflightContext) -> CheckResult:
         session = _session(context)
         data = os.urandom(PROBE_FILE_BYTES)
         started = time.monotonic()
@@ -338,13 +367,13 @@ class FileTransferCheck(Check):
         )
 
 
-class NetworkIsolationCheck(Check):
+class NetworkIsolationCheck(SandboxCheck):
     """An outbound HTTPS request from the sandbox fails."""
 
     name = "Network isolation"
     description = "trying an outbound HTTPS request (up to 5 s)"
 
-    def run(self, context: PreflightContext) -> CheckResult:
+    def check(self, context: PreflightContext) -> CheckResult:
         session = _session(context)
         session.write_file(NETWORK_PROBE_PATH, NETWORK_PROBE_SCRIPT)
         result = session.run(f"python3 {NETWORK_PROBE_PATH}", timeout_seconds=30)
@@ -381,6 +410,14 @@ class CleanupCheck(Check):
             )
         try:
             session.close(on_progress=context.progress)
+        except ServiceError as error:
+            return CheckResult.failed(
+                f"HTTP {error.status}: {error.code}: the test sandbox "
+                f"{session.sandbox_id} was not deleted",
+                _hint(error) + " Then delete it with "
+                "python -m fraud_detective.cleanup --delete.",
+                blocking=False,
+            )
         except SandboxError as error:
             # The stop was requested; the service is just slow to finish it.
             return CheckResult.warning(
@@ -448,12 +485,30 @@ def _hint(error: ServiceError) -> str:
             "Authentication failed: check the key and fingerprint in the OCI "
             "profile, or refresh the session token (oci session refresh)."
         )
+    if error.status == 403:
+        return (
+            "Not authorized: check the IAM policies of the compartment "
+            f"({POLICIES_PAGE})."
+        )
     if error.status == 404:
         return (
             "Not found or not authorized: check oci.project_id, that oci.region is "
-            "the project's region, and the IAM policies (manage "
-            "generative-ai-sandbox, read generative-ai-project)."
+            "the project's region, and the IAM policies of the compartment "
+            f"({POLICIES_PAGE})."
         )
     if error.status == 429:
         return "Throttled or out of quota: check the sandbox service limits."
     return str(error.message)
+
+
+def _model_hint(error: BaseException, provider: ModelProvider, hint: str) -> str:
+    """How to fix a refused model call, from the HTTP status of the error."""
+    status = getattr(error, "status_code", None)
+    if status == 401:
+        return "The API key in .env was refused: check that it is right and valid."
+    if status in (403, 404) and provider is ModelProvider.OCI:
+        return (
+            f"{hint} If they are right, check the IAM policies that let the "
+            f"API key call the models ({POLICIES_PAGE})."
+        )
+    return hint
