@@ -146,6 +146,18 @@ Check it:
   reporting them as fraud?
 - Did it follow the text addressed to the AI? It must not.
 
+Then open the trace, every tool call of the investigation with its output:
+
+```bash
+open -t out/halden-ap-q3-2026-trace.md
+```
+
+Look at the Python the model wrote in the `run_python` calls: how did it join
+the supplier bank accounts with the payroll IBANs? How did it get the line
+numbers it cites? A reviewer can run the same code again to check how the
+agent reached each finding. The trace contains case data: handle it like the
+report.
+
 Then compare your report with the
 [expected findings](../docs/sample-bundle.md). Try also to change the bundle:
 any change to the zip makes step 1 fail, before a sandbox is created.
@@ -188,7 +200,7 @@ run it only on the project you created for the labs.
 
 - `python -m pytest tests/unit tests/lab1 tests/lab2 tests/lab3 -q` passes.
 - `out/halden-ap-q3-2026-report.md` has findings with amounts and verified
-  evidence.
+  evidence, and `out/halden-ap-q3-2026-trace.md` shows the code the model ran.
 - You can explain what the hash proves and what it does not, why the report
   request sends no history, and what a ✘ in the evidence table would mean.
 

@@ -136,6 +136,19 @@ python -m fraud_detective.cli BUNDLE [--sandbox-id ID] [--keep] [--snapshot]
                             [--expected-sha256 HEX]
 ```
 
+- `render_trace(result: AgentResult, metadata: dict[str, str]) -> str`: every
+  tool call of the investigation as Markdown, so that people can see what the
+  model did. It starts with `# Investigation Trace`, `TRACE_NOTE` as a quote
+  (a fixed sentence: the trace lists every tool call with its arguments and
+  output, and contains case data, to handle like the report) and the same
+  metadata table as the report. Then one section per call, in order,
+  `## <n>. <tool name>`, with the arguments and, after a line `Output:`, the
+  output in a fenced `text` block. For `run_python` show the code in a
+  fenced `python` block, not as JSON; for other tools show the arguments as
+  JSON in a `json` block; arguments that are not valid JSON are shown as sent,
+  in a `text` block. Make each fence longer than the longest run of backticks
+  inside the block, so a block cannot end early. With no tool calls, write
+  `The model called no tools.`
 - `InvestigationApp(settings, manager, model_client, output_dir, stream)`, with
   `run(bundle, *, sandbox_id=None, keep=False, snapshot=False, max_steps=...,
   task=..., expected_sha256=None) -> Path` (the Markdown report). `main()` builds the real
@@ -163,10 +176,11 @@ python -m fraud_detective.cli BUNDLE [--sandbox-id ID] [--keep] [--snapshot]
      further check. It is a fact established by the code, not bundle
      content.
   5. **Report**: `ReportWriter`, then `EvidenceChecker`; write
-     `<output-dir>/<bundle-stem>-report.md` and `-report.json`; print both
-     paths and how many evidence lines were verified. The JSON file is the
-     report's `to_dict()` plus `bundle_sha256` and `review_note`; the
-     Markdown metadata include the bundle SHA-256.
+     `<output-dir>/<bundle-stem>-report.md`, `-report.json` and
+     `-trace.md`; print the three paths and how many evidence lines were
+     verified. The JSON file is the report's `to_dict()` plus
+     `bundle_sha256` and `review_note`; the Markdown metadata include the
+     bundle SHA-256. The trace is `render_trace(result, metadata)` (below).
   6. **Cleanup**: with `--snapshot`, take a snapshot and print its id. Then
      close a sandbox created by this run, unless `--keep`: in that case print
      its id and the command to reuse it (`--sandbox-id`). Never close a
@@ -234,6 +248,7 @@ Target layout (non-terminal stream, so no colors):
   ✔ Evidence verified: 21/22 (first cited lines)
   Markdown  out/halden-ap-q3-2026-report.md
   JSON      out/halden-ap-q3-2026-report.json
+  Trace     out/halden-ap-q3-2026-trace.md
 ▸ 6. Cleanup
   ✔ Sandbox closed
 
@@ -320,11 +335,14 @@ They cover:
   replaces the file.
 - `InvestigationApp.run` end to end with the fakes: the six steps in order; the
   first request carries `task_with_integrity(task, sha256)`; the report
-  files are written, with the bundle hash;
+  files and the trace are written, with the bundle hash;
   a created sandbox is closed; with `keep=True` it is not, and its id is
   printed; an attached sandbox is never closed; a bad bundle prints one
   error line and still runs the cleanup; a `close()` that raises
   `SandboxError` prints a warning and the run still succeeds.
+- `render_trace`: the code of `run_python` in a `python` block; the output of
+  every call; invalid arguments shown as sent; an output containing ``` gets
+  a longer fence; no tool calls gives `The model called no tools.`
 - Progress: many state messages on a non-terminal stream produce only a few
   lines (use a stream whose `isatty()` returns False, and patch the clock).
 - Console output: the banner comes before step 1; the result panel shows

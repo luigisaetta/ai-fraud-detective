@@ -123,7 +123,8 @@ anomalies and text that tries to give orders to the AI.
   note that investigators verify the findings.
 - `fraud_detective/cli.py` — `python -m fraud_detective.cli bundles/<bundle>.zip`: check the
   bundle against its reference hash, create a sandbox, upload the bundle and
-  check the copy, run the agent, write the report to `out/`, clean up.
+  check the copy, run the agent, write the report and the trace of the tool
+  calls to `out/`, clean up.
 
 **Steps:** run the CLI on the sample case with `--keep` (sandbox creation
 may occasionally take longer); check the findings, the amounts and the

@@ -82,7 +82,9 @@ python -m fraud_detective.cli bundles/halden-ap-q3-2026.zip
 Starting a sandbox can take several minutes. The CLI checks the bundle
 against its reference hash, shows each step, then a panel with the summary,
 the overall risk, the total exposure, the findings and how many cited lines
-were verified. The report is in `out/halden-ap-q3-2026-report.md`.
+were verified. The report is in `out/halden-ap-q3-2026-report.md`; the
+trace of the tool calls, with the code the model ran, is in
+`out/halden-ap-q3-2026-trace.md`.
 The [expected findings](sample-bundle.md) list what a good report finds.
 
 ## 6. Clean up

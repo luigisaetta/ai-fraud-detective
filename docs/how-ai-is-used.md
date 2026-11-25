@@ -37,7 +37,8 @@ read through tools that return a few thousand characters. So the model
 standard library only: `csv` to read the exports, `sqlite3` in memory to join
 and group them, `decimal` for amounts. The code is generated on the fly, for
 this bundle, and nobody reviews it before it runs: one more reason for the
-sandbox.
+sandbox. After the run, `out/<bundle>-trace.md` shows every tool call with the
+code the model wrote and the output it received.
 
 ### 2. Correlating evidence across files
 

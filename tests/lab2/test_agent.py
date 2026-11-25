@@ -1,6 +1,6 @@
 """
 Author: L. Saetta
-Date Last Modified: 2026-11-23
+Date Last Modified: 2026-11-25
 License: MIT
 Description: Test the investigation loop with scripted SDK responses and sandbox-backed tools.
 """
@@ -449,6 +449,7 @@ def test_instructions_describe_the_forensic_method() -> None:
     text = " ".join(INVESTIGATION_INSTRUCTIONS.lower().split())
     for phrase in ("forensic", "standard library", "path:line", "header", "eur"):
         assert phrase in text
+    assert "enumerate(" in text, "show how to get CSV line numbers"
 
 
 def test_factory_uses_settings_and_forwards_options(tools: ToolRegistry) -> None:

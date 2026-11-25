@@ -1,9 +1,9 @@
 """
 Author: L. Saetta
-Date Last Modified: 2026-11-23
+Date Last Modified: 2026-11-25
 License: MIT
-Description: Test CLI output, the integrity check, progress throttling and
-    sandbox lifecycle with local fakes.
+Description: Test CLI output, the integrity check, the trace of the tool calls,
+    progress throttling and sandbox lifecycle with local fakes.
 """
 
 from dataclasses import dataclass, replace
@@ -29,7 +29,8 @@ from tests.lab3.fakes import (
     settings,
 )
 from fraud_detective import cli
-from fraud_detective.cli import BOX_WIDTH, DEFAULT_TASK, InvestigationApp
+from fraud_detective.agent import AgentResult, ToolCall
+from fraud_detective.cli import BOX_WIDTH, DEFAULT_TASK, InvestigationApp, render_trace
 from fraud_detective.config import Settings
 from fraud_detective.ingest import BundleError
 from fraud_detective.report import ReportError
@@ -196,8 +197,69 @@ def test_end_to_end_reports_and_cleanup(harness: Harness) -> None:
         "Evidence verified: 1/1",
         str(path),
         str(path.with_suffix(".json")),
+        str(harness.output / "sample-trace.md"),
     ):
         assert value in text
+
+
+def test_end_to_end_writes_the_trace(harness: Harness) -> None:
+    """Save every tool call, with its arguments and output, next to the report."""
+    harness.app().run(harness.bundle)
+    trace = (harness.output / "sample-trace.md").read_text(encoding="utf-8")
+    digest = hashlib.sha256(harness.bundle.read_bytes()).hexdigest()
+    assert trace.startswith("# Investigation Trace")
+    assert "case data" in trace
+    assert digest in trace and "| Tool Calls | 1 |" in trace
+    assert "## 1. read_file" in trace
+    assert '"path": "ap/invoices.csv"' in trace
+    assert "ap/invoices.csv:2: NB-1,S2031,9480.00,MFERRI,MFERRI" in trace
+
+
+def _result(*calls: ToolCall) -> AgentResult:
+    """An investigation result with the given tool calls."""
+    return AgentResult(
+        answer="done",
+        response_id="r-1",
+        stopped_reason="answered",
+        steps=len(calls) + 1,
+        tool_calls=calls,
+        input_tokens=1,
+        output_tokens=1,
+    )
+
+
+def test_trace_shows_the_code_of_run_python() -> None:
+    """Show the Python the model wrote as code, not as a JSON string."""
+    code = "import csv\nprint('rows', 3)"
+    trace = render_trace(
+        _result(ToolCall("run_python", json.dumps({"code": code}), "rows 3\n")),
+        {"bundle": "sample.zip"},
+    )
+    assert "## 1. run_python" in trace
+    assert "```python\nimport csv\nprint('rows', 3)\n```" in trace
+    assert "```text\nrows 3\n```" in trace
+    assert "| Bundle | sample.zip |" in trace
+
+
+def test_trace_keeps_invalid_arguments_and_backticks_readable() -> None:
+    """Show invalid JSON as sent, and fence output that contains backticks."""
+    trace = render_trace(
+        _result(
+            ToolCall("grep", "{not json", "ERROR: invalid arguments"),
+            ToolCall("read_file", json.dumps({"path": "a.md"}), "a.md:1: ```x```"),
+        ),
+        {},
+    )
+    assert "```text\n{not json\n```" in trace
+    assert "## 2. read_file" in trace
+    assert "````text\na.md:1: ```x```\n````" in trace
+
+
+def test_trace_without_tool_calls() -> None:
+    """Say so when the model answered without calling a tool."""
+    trace = render_trace(_result(), {})
+    assert "The model called no tools." in trace
+    assert "## 1." not in trace
 
 
 def test_banner_and_result_panel(harness: Harness) -> None:

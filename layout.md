@@ -38,7 +38,7 @@ tests/scenario/                    sample case tests and reference solver
 solutions/labN/                    reference solutions for participants
 docs/                              lab overview, setup and easy path; instructor pages (scenario, answer key)
 bundles/                           generated bundles and their .sha256 files
-out/                               generated Markdown and JSON reports
+out/                               generated reports (Markdown, JSON) and tool-call traces
 ```
 
 The `(provided)` modules supply the infrastructure used by the labs.

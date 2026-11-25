@@ -273,7 +273,9 @@ python -m fraud_detective.cli bundles/halden-ap-q3-2026.zip --keep
 
 The CLI verifies the bundle against the reference hash, prints each stage
 and writes the findings to `out/halden-ap-q3-2026-report.md` and
-`out/halden-ap-q3-2026-report.json`. Review the findings, the total exposure
+`out/halden-ap-q3-2026-report.json`. It also writes every tool call of the
+investigation, with the code the model ran, to
+`out/halden-ap-q3-2026-trace.md`. Review the findings, the total exposure
 and the evidence verification marks as described in the
 [Lab 3 guide](labs/lab3.md).
 

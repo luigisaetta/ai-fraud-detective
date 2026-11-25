@@ -1,9 +1,9 @@
 """
 Author: L. Saetta
-Date Last Modified: 2026-11-23
+Date Last Modified: 2026-11-25
 License: MIT
 Description: Verify a case bundle, run the investigation in a sandbox, save the
-    forensic report and manage resource cleanup.
+    forensic report and the trace of the tool calls, and manage resource cleanup.
 """
 
 import argparse
@@ -13,6 +13,7 @@ from datetime import datetime, timezone
 import json
 import os
 from pathlib import Path
+import re
 import shlex
 import sys
 import textwrap
@@ -55,6 +56,11 @@ INTEGRITY_NOTE = (
     "Integrity: before this investigation the code checked the bundle against the "
     "reference SHA-256 recorded in the case file ({sha256}). It matched locally and, "
     "after the upload, in the sandbox. You do not need to check the archive hash."
+)
+TRACE_NOTE = (
+    "Every tool call of the investigation, in order: the arguments chosen by the "
+    "model, including the code it ran, and the output it received. The trace "
+    "contains case data: handle it like the report."
 )
 PROGRESS_INTERVAL_SECONDS = 30.0
 BOX_WIDTH = 64
@@ -454,6 +460,7 @@ class InvestigationApp:
         self._output_dir.mkdir(parents=True, exist_ok=True)
         markdown_path = self._output_dir / f"{bundle.stem}-report.md"
         json_path = self._output_dir / f"{bundle.stem}-report.json"
+        trace_path = self._output_dir / f"{bundle.stem}-trace.md"
         markdown_path.write_text(render_markdown(report, metadata), encoding="utf-8")
         document = {
             "bundle_sha256": options.expected_sha256,
@@ -464,12 +471,14 @@ class InvestigationApp:
             json.dumps(document, indent=2, ensure_ascii=False) + "\n",
             encoding="utf-8",
         )
+        trace_path.write_text(render_trace(result, metadata), encoding="utf-8")
         verified = sum(item.verified is True for item in report.evidence)
         self._view.done(
             f"Evidence verified: {verified}/{len(report.evidence)} (first cited lines)"
         )
         self._view.info(f"Markdown  {markdown_path}")
         self._view.info(f"JSON      {json_path}")
+        self._view.info(f"Trace     {trace_path}")
         return markdown_path
 
     def _cleanup(self, session: SandboxSession, options: _RunOptions) -> None:
@@ -505,6 +514,51 @@ class InvestigationApp:
             )
         else:
             self._view.done("Sandbox closed")
+
+
+def _fence(text: str, language: str) -> str:
+    """A fenced code block longer than any backtick run inside the text."""
+    longest = max((len(run) for run in re.findall(r"`+", text)), default=0)
+    fence = "`" * max(3, longest + 1)
+    return f"{fence}{language}\n{text.rstrip()}\n{fence}"
+
+
+def _arguments_block(name: str, arguments: str) -> str:
+    """The arguments of a call: the code for run_python, JSON otherwise."""
+    try:
+        parsed = json.loads(arguments)
+    except json.JSONDecodeError:
+        return _fence(arguments, "text")
+    if name == "run_python" and isinstance(parsed, dict):
+        code = parsed.get("code")
+        if isinstance(code, str):
+            return _fence(code, "python")
+    return _fence(json.dumps(parsed, ensure_ascii=False), "json")
+
+
+def render_trace(result: AgentResult, metadata: dict[str, str]) -> str:
+    """Render every tool call of an investigation as Markdown.
+
+    Args:
+        result: The investigation result, with its tool calls in order.
+        metadata: The same metadata rows as the report.
+
+    Returns:
+        A Markdown document: the metadata, then one section per tool call with
+        its arguments (the Python code for run_python) and its output.
+    """
+    lines = ["# Investigation Trace", "", f"> {TRACE_NOTE}", ""]
+    lines += ["| Metadata | Value |", "| --- | --- |"]
+    for key, value in metadata.items():
+        label = key.replace("_", " ").title().replace("Sha256", "SHA-256")
+        lines.append(f"| {label} | {value} |")
+    if not result.tool_calls:
+        lines += ["", "The model called no tools."]
+    for number, call in enumerate(result.tool_calls, start=1):
+        lines += ["", f"## {number}. {call.name}", ""]
+        lines += [_arguments_block(call.name, call.arguments), "", "Output:", ""]
+        lines.append(_fence(call.output, "text"))
+    return "\n".join(lines) + "\n"
 
 
 def task_with_integrity(task: str, sha256: str | None) -> str:

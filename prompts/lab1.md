@@ -52,6 +52,17 @@ agent uses to explore a case bundle. Do not change any provided file.
 | `GrepTool` | `grep` | `pattern` (extended regular expression), `path` (file or directory, `"."` for all) | matches as `path:line: text`, at most `MAX_GREP_MATCHES` (say how many were omitted); a clear message when nothing matches |
 | `RunPythonTool` | `run_python` | `code` (a Python 3 script) | the script's exit code and output; it runs with the bundle directory as current directory, so it can open files by relative path |
 
+Write each `description` so the model picks the right tool at the first try,
+because every extra call costs a model step and grows the conversation:
+
+- `read_file` is for reading evidence and text files: say that it returns up
+  to `MAX_READ_LINES` lines per call and that a later range continues the
+  file. Do not tell the model to read short ranges: that leads to many small
+  calls where one would do.
+- `run_python` is for tables: joins, filters, groupings and sums over the CSV
+  files, instead of reading them with `read_file`.
+- `list_files` starts the investigation; `grep` finds a value across files.
+
 `path:line: text` is the evidence format of the final report (Lab 3): paths are
 always relative to `BUNDLE_DIR`, in results and in error messages alike.
 
