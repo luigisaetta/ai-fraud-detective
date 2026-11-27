@@ -155,3 +155,10 @@ A task is done only when:
 3. No file in "Files you must not change" was modified (`git status`).
 4. You told the user what you built, which commands you ran and their result,
    and anything left open. Do not commit unless the user asks.
+
+## Maintaining the workshop
+
+This section applies only when the lab authors change the workshop itself,
+not to the lab tasks above. When you commit a significant change to the
+repository, add an entry under **Unreleased** in `CHANGELOG.md` in the same
+commit. The rules are at the top of `CHANGELOG.md`.

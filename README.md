@@ -336,7 +336,7 @@ their first investigation.
 The current version is 1.0.0. The [changelog](CHANGELOG.md) records every
 significant change since then. Maintainers: add an entry under
 **Unreleased** in the same commit as each significant change, as described
-at the top of the changelog.
+at the top of the changelog. `AGENTS.md` gives the same rule to Codex.
 
 ## License
 
