@@ -56,16 +56,7 @@ CSV file, line 1 is the header and line *n* is data row *n − 1*.
 
 ## Steps
 
-### 1. See the tests fail
-
-```bash
-python -m pytest tests/lab1 -q
-```
-
-They fail with `ModuleNotFoundError: fraud_detective.tools`: the module does not exist
-yet. Your job is to make them pass.
-
-### 2. Ask Codex to build the tools
+### 1. Ask Codex to build the tools
 
 Open Codex in the repository root and enter:
 
@@ -78,7 +69,7 @@ The prompt gives Codex the interface (`Tool`, the four tools,
 tests to pass. Codex writes `fraud_detective/tools.py`, runs the tests, black and
 pylint, and reports.
 
-### 3. Review what Codex wrote
+### 2. Review what Codex wrote
 
 Open `fraud_detective/tools.py` and check:
 
@@ -89,7 +80,7 @@ Open `fraud_detective/tools.py` and check:
   `run_python` writes the code to a file in `/workspace/scratch` and runs it.
 - Every command has a timeout.
 
-### 4. Run the checks
+### 3. Run the checks
 
 ```bash
 python -m pytest tests/unit tests/lab1 -q
@@ -99,7 +90,7 @@ python -m pylint fraud_detective
 
 All tests pass, black reports nothing, pylint reports no problems.
 
-### 5. Try the tools by hand (optional)
+### 4. Try the tools by hand (optional)
 
 ```python
 import tempfile

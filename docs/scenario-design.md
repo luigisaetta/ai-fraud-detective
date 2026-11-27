@@ -257,6 +257,11 @@ confidence). Overpayment: 4,812.40 EUR, recoverable.
 **Not findings:** the four red herrings in section 5. Clearing them
 explicitly is a bonus.
 
+**Acceptable extra finding:** some background goods invoices have no PO,
+against policy section 1.4. A separate control exception with an amount of
+0 is correct; adding their value to the exposure is not. See
+[the sample bundle page](sample-bundle.md#acceptable-extra-finding).
+
 **Expected next steps:**
 - block the scheduled payment of NB-0422;
 - freeze supplier S2031 and suspend the user's access;

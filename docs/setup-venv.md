@@ -233,5 +233,5 @@ deactivate
 ```
 
 Deactivation changes your local shell's Python environment. Follow the
-[Lab 3 cleanup instructions](../labs/lab3.md#7-clean-up) to clean up any
+[Lab 3 cleanup instructions](../labs/lab3.md#6-clean-up) to clean up any
 sandbox you chose to keep.

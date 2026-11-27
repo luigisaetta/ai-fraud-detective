@@ -66,16 +66,7 @@ model_id = "gpt-6-luna"
 
 ## Steps
 
-### 1. See the tests fail
-
-```bash
-python -m pytest tests/lab4 -q
-```
-
-They fail with `ModuleNotFoundError`: `fraud_detective.decisions` does not exist
-yet.
-
-### 2. Ask Codex to build the decision support
+### 1. Ask Codex to build the decision support
 
 Open Codex in the repository root and enter:
 
@@ -85,7 +76,7 @@ Read prompts/lab4.md and do what it says (everything below the first line).
 
 The tests use a fake Decisions API client: Codex makes no real call.
 
-### 3. Review what Codex wrote
+### 2. Review what Codex wrote
 
 - One request with all the questions; the report goes as `input_json`, and
   only the fields listed in `REPORT_FIELDS`.
@@ -94,7 +85,7 @@ The tests use a fake Decisions API client: Codex makes no real call.
 - The thresholds `LIKELY` and `UNLIKELY` are constants in the code, and the
   output always carries the fixed note.
 
-### 4. Run the checks
+### 3. Run the checks
 
 ```bash
 python -m pytest tests/unit tests/lab4 -q
@@ -102,7 +93,7 @@ python -m black --check fraud_detective tests
 python -m pylint fraud_detective
 ```
 
-### 5. Run it on your report
+### 4. Run it on your report
 
 ```bash
 python -m fraud_detective.decisions out/halden-ap-q3-2026-report.json
@@ -120,10 +111,10 @@ Check it:
 - Is the next action consistent with the two answers above?
 - How long did the request take, compared with the investigation?
 
-### 6. Change a question (optional)
+### 5. Change a question (optional)
 
 In `build_questions`, replace the stoppable question with "can part of the
-amount at risk still be stopped or recovered?" and run step 5 again. Look at
+amount at risk still be stopped or recovered?" and run step 4 again. Look at
 the answer for the duplicate payment: it is less clear, because the question
 mixes two situations. Put the original question back.
 
@@ -138,7 +129,7 @@ mixes two situations. Put the original question back.
 
 ## Stuck?
 
-Copy the reference solution and run step 5:
+Copy the reference solution and run step 4:
 
 ```bash
 cp solutions/lab4/decisions.py fraud_detective/

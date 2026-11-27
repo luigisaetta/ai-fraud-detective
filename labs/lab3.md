@@ -85,16 +85,7 @@ text that tries to give orders to the AI.
 
 ## Steps
 
-### 1. See the tests fail
-
-```bash
-python -m pytest tests/lab3 -q
-```
-
-They fail with `ModuleNotFoundError`: `fraud_detective.report` and `fraud_detective.cli` do
-not exist yet.
-
-### 2. Ask Codex to build the report and the CLI
+### 1. Ask Codex to build the report and the CLI
 
 Open Codex in the repository root and enter:
 
@@ -103,9 +94,9 @@ Read prompts/lab3.md and do what it says (everything below the first line).
 ```
 
 The tests use a fake model and a fake sandbox: Codex does not start a real
-sandbox. You will run the CLI yourself in step 5.
+sandbox. You will run the CLI yourself in step 4.
 
-### 3. Review what Codex wrote
+### 2. Review what Codex wrote
 
 - `fraud_detective/report.py`: `ReportWriter.write()` sends `previous_response_id`,
   `store=True` and the strict JSON schema; `EvidenceChecker` reads the first
@@ -114,7 +105,7 @@ sandbox. You will run the CLI yourself in step 5.
   the sandbox; the cleanup runs also after an error or Ctrl+C; a sandbox
   given with `--sandbox-id` is never deleted.
 
-### 4. Run the checks
+### 3. Run the checks
 
 ```bash
 python -m pytest tests/unit tests/lab1 tests/lab2 tests/lab3 -q
@@ -122,7 +113,7 @@ python -m black --check fraud_detective tests
 python -m pylint fraud_detective
 ```
 
-### 5. Run the investigation on a real sandbox
+### 4. Run the investigation on a real sandbox
 
 ```bash
 python -m fraud_detective.cli bundles/halden-ap-q3-2026.zip --keep
@@ -164,11 +155,11 @@ report.
 
 Then compare your report with the
 [expected findings](../docs/sample-bundle.md). Try also to change the bundle:
-any change to the zip makes step 1 fail, before a sandbox is created.
+any change to the zip stops the CLI at the Integrity step, before a sandbox is created.
 
-### 6. Run again without waiting (optional)
+### 5. Run again without waiting (optional)
 
-Reuse the sandbox from step 5 — no start-up wait:
+Reuse the sandbox from step 4 — no start-up wait:
 
 ```bash
 python -m fraud_detective.cli bundles/halden-ap-q3-2026.zip --sandbox-id <sandbox-id>
@@ -177,7 +168,7 @@ python -m fraud_detective.cli bundles/halden-ap-q3-2026.zip --sandbox-id <sandbo
 Try `--snapshot` to save the workspace, or `--task` to ask a different
 question about the same bundle.
 
-### 7. Clean up
+### 6. Clean up
 
 A sandbox kept with `--keep` expires after `sandbox.lifetime_minutes` (60 by
 default) and becomes `STOPPED`, but it is not deleted. Without `--keep`, the
@@ -210,7 +201,7 @@ run it only on the project you created for the labs.
 
 ## Stuck?
 
-Copy the reference solution and run step 5:
+Copy the reference solution and run step 4:
 
 ```bash
 cp solutions/lab3/report.py solutions/lab3/cli.py fraud_detective/

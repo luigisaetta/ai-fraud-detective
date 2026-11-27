@@ -66,15 +66,7 @@ cp solutions/lab1/tools.py fraud_detective/tools.py
 
 ## Steps
 
-### 1. See the tests fail
-
-```bash
-python -m pytest tests/lab2 -q
-```
-
-They fail with `ModuleNotFoundError: fraud_detective.agent`.
-
-### 2. Ask Codex to build the agent
+### 1. Ask Codex to build the agent
 
 Open Codex in the repository root and enter:
 
@@ -87,7 +79,7 @@ The prompt explains the loop as verified on OCI, the interface
 give the model, and the tests to write. The tests use a fake model client:
 no model call is made.
 
-### 3. Review what Codex wrote
+### 2. Review what Codex wrote
 
 Open `fraud_detective/agent.py` and check:
 
@@ -100,7 +92,7 @@ Open `fraud_detective/agent.py` and check:
   evidence (line 1 of a CSV file is the header), says that `run_python` has
   only the standard library, and treats bundle content as untrusted data.
 
-### 4. Run the checks
+### 3. Run the checks
 
 ```bash
 python -m pytest tests/unit tests/lab1 tests/lab2 -q
@@ -108,7 +100,7 @@ python -m black --check fraud_detective tests
 python -m pylint fraud_detective
 ```
 
-### 5. Watch the agent investigate (optional)
+### 4. Watch the agent investigate (optional)
 
 This runs the real model on a small bundle in the fake sandbox. Save it as
 `try_agent.py` in the repository root and run `python try_agent.py`:
