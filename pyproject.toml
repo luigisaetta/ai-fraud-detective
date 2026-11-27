@@ -1,6 +1,6 @@
 [project]
 name = "ai-fraud-detective"
-version = "0.1.0"
+version = "1.0.0"
 description = "AI Fraud Detective: OpenAI Responses API + OCI Sandboxes (LiveLabs)"
 requires-python = ">=3.11"
 dependencies = [
