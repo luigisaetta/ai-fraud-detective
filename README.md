@@ -331,6 +331,13 @@ their first investigation.
 | [Data preview](docs/data-preview.md) | The first lines of every file of the bundle, for a finance or audit reviewer |
 | [Tested LLMs](docs/tested-llms.md) | The results of real runs on the sample case |
 
+## Changes
+
+The current version is 1.0.0. The [changelog](CHANGELOG.md) records every
+significant change since then. Maintainers: add an entry under
+**Unreleased** in the same commit as each significant change, as described
+at the top of the changelog.
+
 ## License
 
 This project is licensed under the [MIT License](LICENSE).
